@@ -13,18 +13,19 @@ class AppColors {
   static const Color accent = Color(0xFFFF8F00); // Naranja para alertas
   static const Color accentLight = Color(0xFFFFB74D);
   
-  // Colores funcionales
-  static const Color background = Color(0xFFF5F5F5);
-  static const Color surface = Colors.white;
-  static const Color error = Color(0xFFD32F2F);
-  static const Color warning = Color(0xFFF57C00);
-  static const Color success = Color(0xFF388E3C);
-  static const Color info = Color(0xFF1976D2);
+  // Colores funcionales - Más blancos y claros
+  static const Color background = Colors.white; // Fondo completamente blanco
+  static const Color surface = Colors.white; // Superficies blancas
+  static const Color cardBackground = Color(0xFFFAFAFA); // Fondo muy sutil para tarjetas
+  static const Color error = Color(0xFFE57373); // Error más suave
+  static const Color warning = Color(0xFFFFB74D); // Warning más suave
+  static const Color success = Color(0xFF81C784); // Success más suave
+  static const Color info = Color(0xFF64B5F6); // Info más suave
   
-  // Colores de texto
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color textHint = Color(0xFFBDBDBD);
+  // Colores de texto - Ajustados para mejor contraste en fondo blanco
+  static const Color textPrimary = Color(0xFF1A1A1A); // Negro más suave
+  static const Color textSecondary = Color(0xFF666666); // Gris más suave
+  static const Color textHint = Color(0xFF999999); // Hint más claro
   
   // Colores específicos para IGV y Renta
   static const Color igvColor = Color(0xFF3F51B5); // Azul índigo para IGV

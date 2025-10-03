@@ -8,9 +8,12 @@ class AppTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.primary,
         brightness: Brightness.light,
+        surface: AppColors.surface,
+        background: AppColors.background,
       ),
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
+      canvasColor: AppColors.background,
       fontFamily: 'Roboto',
       
       appBarTheme: AppBarTheme(
@@ -26,8 +29,9 @@ class AppTheme {
       ),
       
       cardTheme: CardThemeData(
-        elevation: 4,
-        shadowColor: Colors.black26,
+        elevation: 2, // Sombra más sutil
+        shadowColor: Colors.black12, // Sombra más suave
+        color: AppColors.cardBackground, // Fondo muy sutil para las tarjetas
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -49,18 +53,18 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.accent),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.accent.withOpacity(0.5)),
+          borderSide: BorderSide(color: Colors.grey.shade300),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: BorderSide(color: AppColors.primary, width: 2),
         ),
         filled: true,
-        fillColor: Colors.grey[50],
+        fillColor: Colors.white, // Fondo blanco para los campos de entrada
       ),
       
       floatingActionButtonTheme: FloatingActionButtonThemeData(
