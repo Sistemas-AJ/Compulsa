@@ -1,9 +1,7 @@
-// This is a basic Flutter widget test.
+// Test para la aplicación Compulsa - Asistente Tributario
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Este test verifica que la aplicación se inicie correctamente y muestre
+// la pantalla principal con los elementos esperados.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,20 +9,63 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:compulsa/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Compulsa app smoke test', (WidgetTester tester) async {
+    // Construir nuestra aplicación y generar un frame
+    await tester.pumpWidget(const CompulsaApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verificar que se muestre el título de la aplicación
+    expect(find.text('Compulsa - Asistente Tributario'), findsOneWidget);
+    
+    // Verificar que se muestre el mensaje de bienvenida
+    expect(find.text('¡Bienvenido!'), findsOneWidget);
+    
+    // Verificar que se muestre el subtítulo
+    expect(find.text('Tu asistente tributario inteligente para Perú'), findsOneWidget);
+    
+    // Verificar que existan las secciones principales
+    expect(find.text('Acceso Rápido'), findsOneWidget);
+    expect(find.text('Funciones Principales'), findsOneWidget);
+    expect(find.text('Actividad Reciente'), findsOneWidget);
+    
+    // Verificar que existan los botones principales
+    expect(find.text('Empresas'), findsOneWidget);
+    expect(find.text('Calcular'), findsOneWidget);
+    expect(find.text('Declaraciones'), findsOneWidget);
+    expect(find.text('Reportes'), findsOneWidget);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('Navigation test', (WidgetTester tester) async {
+    // Construir la aplicación
+    await tester.pumpWidget(const CompulsaApp());
+    
+    // Buscar y tocar el botón de Empresas
+    await tester.tap(find.text('Empresas'));
+    await tester.pumpAndSettle();
+    
+    // Verificar que navegó a la pantalla de empresas
+    expect(find.text('Empresas'), findsOneWidget);
+    
+    // Regresar a la pantalla principal
+    await tester.tap(find.byIcon(Icons.arrow_back));
+    await tester.pumpAndSettle();
+    
+    // Verificar que regresó al dashboard
+    expect(find.text('¡Bienvenido!'), findsOneWidget);
+  });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  testWidgets('Floating action button test', (WidgetTester tester) async {
+    // Construir la aplicación
+    await tester.pumpWidget(const CompulsaApp());
+    
+    // Verificar que existe el FloatingActionButton
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(find.text('Calcular'), findsOneWidget);
+    
+    // Tocar el FloatingActionButton
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+    
+    // Verificar que navegó a la pantalla de cálculos
+    expect(find.text('Cálculos Tributarios'), findsOneWidget);
   });
 }
