@@ -1,9 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../models/database_models.dart';
 import '../models/regimen_tributario.dart';
 import '../models/actividad_reciente.dart';
@@ -25,19 +23,16 @@ class DatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    // Inicializar sqflite_ffi para Windows
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-      sqfliteFfiInit();
-      databaseFactory = databaseFactoryFfi;
-    }
+    // No inicializar sqflite_ffi aquí, ya se hace en main.dart
     
     String databasesPath = await getDatabasesPath();
     String path = join(databasesPath, 'Compulsa.db');
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 5,
       onCreate: _createDatabase,
+      onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
@@ -50,7 +45,8 @@ class DatabaseService {
       CREATE TABLE Regimenes_Tributarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         nombre TEXT NOT NULL UNIQUE,
-        tasa_renta REAL NOT NULL
+        tasa_renta REAL NOT NULL,
+        tasa_igv REAL NOT NULL DEFAULT 18.0
       )
     ''');
 
@@ -61,6 +57,7 @@ class DatabaseService {
         regimen_id INTEGER NOT NULL,
         nombre_razon_social TEXT NOT NULL,
         ruc TEXT UNIQUE,
+        imagen_perfil TEXT,
         FOREIGN KEY (regimen_id) REFERENCES Regimenes_Tributarios (id)
       )
     ''');
@@ -120,21 +117,141 @@ class DatabaseService {
       )
     ''');
 
-    // Base de datos lista para uso del usuario
+    // Inicializar con datos por defecto si es una nueva base de datos
+    await _inicializarDatosDefecto(db);
+  }
+
+  Future<void> _inicializarDatosDefecto(Database db) async {
+    try {
+      // Verificar si ya hay regímenes
+      final List<Map<String, dynamic>> regimenes = await db.query('Regimenes_Tributarios');
+      print('Regímenes existentes: ${regimenes.length}');
+      
+      if (regimenes.isEmpty) {
+        print('Insertando regímenes predefinidos...');
+        
+        // Insertar regímenes tributarios oficiales del Perú
+        await db.insert('Regimenes_Tributarios', {
+          'nombre': 'Nuevo Régimen Único Simplificado (NRUS)',
+          'tasa_renta': 0.0,
+          'tasa_igv': 0.0, // NRUS no paga IGV
+        });
+        print('Insertado: NRUS');
+        
+        await db.insert('Regimenes_Tributarios', {
+          'nombre': 'Régimen Especial de Impuesto a la Renta (RER)',
+          'tasa_renta': 1.5,
+          'tasa_igv': 18.0, // RER paga IGV normal
+        });
+        print('Insertado: RER');
+        
+        await db.insert('Regimenes_Tributarios', {
+          'nombre': 'Régimen MYPE Tributario',
+          'tasa_renta': 10.0,
+          'tasa_igv': 18.0, // MYPE paga IGV normal
+        });
+        print('Insertado: MYPE');
+        
+        await db.insert('Regimenes_Tributarios', {
+          'nombre': 'Régimen General',
+          'tasa_renta': 29.5,
+          'tasa_igv': 18.0, // General paga IGV normal
+        });
+        print('Insertado: General');
+        
+        // Verificar inserción
+        final List<Map<String, dynamic>> nuevosRegimenes = await db.query('Regimenes_Tributarios');
+        print('Total regímenes después de inserción: ${nuevosRegimenes.length}');
+      } else {
+        print('Regímenes ya existen en la base de datos');
+      }
+    } catch (e) {
+      print('Error al inicializar datos por defecto: $e');
+    }
+  }
+
+  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+    print('Actualizando base de datos de versión $oldVersion a $newVersion');
+    
+    if (oldVersion < 2) {
+      // Agregar tabla Actividades_Recientes en la versión 2
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS Actividades_Recientes (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          tipo TEXT NOT NULL,
+          descripcion TEXT NOT NULL,
+          datos TEXT NOT NULL,
+          fecha_creacion TEXT NOT NULL,
+          icono TEXT NOT NULL,
+          color TEXT NOT NULL
+        )
+      ''');
+    }
+    
+    if (oldVersion < 3) {
+      // Reinicializar regímenes en la versión 3
+      await db.delete('Regimenes_Tributarios');
+      await _inicializarDatosDefecto(db);
+      // Migrar empresas existentes para usar nuevos IDs
+      await _migrarEmpresasExistentes();
+    }
+    
+    if (oldVersion < 4) {
+      // Agregar columna tasa_igv en la versión 4
+      try {
+        await db.execute('ALTER TABLE Regimenes_Tributarios ADD COLUMN tasa_igv REAL NOT NULL DEFAULT 18.0');
+        print('Columna tasa_igv agregada correctamente');
+        
+        // Actualizar tasas de IGV para regímenes existentes
+        await db.update('Regimenes_Tributarios', {'tasa_igv': 0.0}, where: 'nombre LIKE ?', whereArgs: ['%NRUS%']);
+        await db.update('Regimenes_Tributarios', {'tasa_igv': 18.0}, where: 'nombre NOT LIKE ?', whereArgs: ['%NRUS%']);
+        print('Tasas de IGV actualizadas');
+      } catch (e) {
+        print('Error al agregar columna tasa_igv: $e');
+        // Si falla, recrear la tabla
+        await db.delete('Regimenes_Tributarios');
+        await _inicializarDatosDefecto(db);
+        await _migrarEmpresasExistentes();
+      }
+    }
+    
+    if (oldVersion < 5) {
+      // Agregar columna imagen_perfil en la versión 5
+      try {
+        await db.execute('ALTER TABLE Empresas ADD COLUMN imagen_perfil TEXT');
+        print('Columna imagen_perfil agregada correctamente');
+      } catch (e) {
+        print('Error al agregar columna imagen_perfil: $e');
+      }
+    }
   }
 
   // ===== MÉTODOS PARA REGÍMENES TRIBUTARIOS =====
   Future<List<RegimenTributario>> obtenerRegimenes() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('Regimenes_Tributarios');
-    
-    return List.generate(maps.length, (i) {
-      return RegimenTributario(
-        id: maps[i]['id'],
-        nombre: maps[i]['nombre'],
-        tasaRenta: maps[i]['tasa_renta'],
-      );
-    });
+    try {
+      final db = await database;
+      print('Base de datos inicializada correctamente');
+      
+      final List<Map<String, dynamic>> maps = await db.query('Regimenes_Tributarios');
+      print('Consultando regímenes: encontrados ${maps.length}');
+      
+      if (maps.isNotEmpty) {
+        for (var map in maps) {
+          print('Régimen: ${map['nombre']} - Tasa: ${map['tasa_renta']}%');
+        }
+      }
+      
+      return List.generate(maps.length, (i) {
+        return RegimenTributario(
+          id: maps[i]['id'],
+          nombre: maps[i]['nombre'],
+          tasaRenta: maps[i]['tasa_renta'],
+        );
+      });
+    } catch (e) {
+      print('Error al obtener regímenes: $e');
+      return [];
+    }
   }
 
   Future<RegimenTributario?> obtenerRegimenPorId(int id) async {
@@ -155,34 +272,20 @@ class DatabaseService {
     return null;
   }
 
-  Future<int> insertarRegimen(RegimenTributario regimen) async {
-    final db = await database;
-    return await db.insert('Regimenes_Tributarios', {
-      'nombre': regimen.nombre,
-      'tasa_renta': regimen.tasaRenta,
-    });
-  }
-
-  Future<int> actualizarRegimen(RegimenTributario regimen) async {
-    final db = await database;
-    return await db.update(
-      'Regimenes_Tributarios',
-      {
-        'nombre': regimen.nombre,
-        'tasa_renta': regimen.tasaRenta,
-      },
-      where: 'id = ?',
-      whereArgs: [regimen.id],
-    );
-  }
-
-  Future<int> eliminarRegimen(int id) async {
-    final db = await database;
-    return await db.delete(
-      'Regimenes_Tributarios',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+  // Método para reinicializar regímenes (para debugging)
+  Future<void> reinicializarRegimenes() async {
+    try {
+      final db = await database;
+      // Eliminar todos los regímenes existentes
+      await db.delete('Regimenes_Tributarios');
+      print('Regímenes eliminados');
+      
+      // Insertar regímenes nuevamente
+      await _inicializarDatosDefecto(db);
+      print('Regímenes reinicializados');
+    } catch (e) {
+      print('Error al reinicializar regímenes: $e');
+    }
   }
 
   // ===== MÉTODOS PARA EMPRESAS =====
@@ -341,8 +444,74 @@ class DatabaseService {
   }
 
   Future<void> eliminarDatabase() async {
-    String databasesPath = await getDatabasesPath();
-    String path = join(databasesPath, 'Compulsa.db');
-    await deleteDatabase(path);
+    try {
+      // Cerrar conexión actual si existe
+      if (_database != null) {
+        await _database!.close();
+        _database = null;
+      }
+      
+      String databasesPath = await getDatabasesPath();
+      String path = join(databasesPath, 'Compulsa.db');
+      
+      try {
+        await deleteDatabase(path);
+        print('Base de datos eliminada correctamente: $path');
+      } catch (e) {
+        print('Error al eliminar base de datos principal: $e');
+        // Intentar eliminar archivos WAL y SHM manualmente si existen
+        try {
+          final walPath = '$path-wal';
+          final shmPath = '$path-shm';
+          // Note: En Flutter no podemos usar dart:io File directamente aquí
+          // Solo reportamos el error y continuamos
+          print('Archivos WAL/SHM podrían existir: $walPath, $shmPath');
+        } catch (e2) {
+          print('Error adicional: $e2');
+        }
+      }
+    } catch (e) {
+      print('Error general al eliminar base de datos: $e');
+    }
+  }
+
+  Future<void> _migrarEmpresasExistentes() async {
+    print('Iniciando migración de empresas existentes');
+    final db = await database;
+    
+    try {
+      // Obtener todos los regímenes válidos
+      final regimenesResult = await db.query('Regimenes_Tributarios');
+      final List<int> regimenesValidos = regimenesResult.map((r) => r['id'] as int).toList();
+      print('Regímenes válidos disponibles: $regimenesValidos');
+      
+      // Obtener empresas existentes
+      final empresasResult = await db.query('empresas');
+      print('Empresas existentes encontradas: ${empresasResult.length}');
+      
+      for (final empresa in empresasResult) {
+        final empresaId = empresa['id'];
+        final regimenId = empresa['regimen_tributario_id'];
+        
+        print('Procesando empresa ID: $empresaId, regimen actual: $regimenId');
+        
+        // Si el régimen no existe o es null, asignar el primero disponible (NRUS)
+        if (regimenId == null || !regimenesValidos.contains(regimenId)) {
+          final nuevoRegimenId = regimenesValidos.first; // NRUS por defecto
+          await db.update(
+            'empresas',
+            {'regimen_tributario_id': nuevoRegimenId},
+            where: 'id = ?',
+            whereArgs: [empresaId],
+          );
+          print('Empresa $empresaId migrada de régimen $regimenId a $nuevoRegimenId');
+        } else {
+          print('Empresa $empresaId ya tiene régimen válido: $regimenId');
+        }
+      }
+      print('Migración de empresas completada');
+    } catch (e) {
+      print('Error durante migración de empresas: $e');
+    }
   }
 }

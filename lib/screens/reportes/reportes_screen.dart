@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/cards/dashboard_card.dart';
+import '../../widgets/compulsa_appbar.dart';
 
 class ReportesScreen extends StatelessWidget {
   const ReportesScreen({super.key});
@@ -8,10 +9,8 @@ class ReportesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Reportes'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+      appBar: const CompulsaAppBar(
+        title: 'Reportes',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

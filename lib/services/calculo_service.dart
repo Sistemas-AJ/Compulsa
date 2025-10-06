@@ -1,5 +1,5 @@
 import '../core/constants/api_config.dart';
-import 'regimen_tributario_service.dart';
+import 'database_service.dart';
 
 class CalculoService {
   static const double _igvRate = 0.18; // 18%
@@ -36,7 +36,7 @@ class CalculoService {
     await Future.delayed(AppConfig.simulatedDelay);
 
     // Obtener información del régimen
-    final regimen = await RegimenTributarioService.getRegimenById(regimenId);
+    final regimen = await DatabaseService().obtenerRegimenPorId(regimenId);
     if (regimen == null) {
       throw Exception('Régimen tributario no encontrado');
     }

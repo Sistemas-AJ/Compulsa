@@ -3,6 +3,7 @@ class RegimenTributario {
   final String nombre;
   final String? descripcion;
   final double tasaRenta;
+  final double tasaIGV;
   final double? limiteIngresos;
   final bool activo;
 
@@ -11,6 +12,7 @@ class RegimenTributario {
     required this.nombre,
     this.descripcion,
     required this.tasaRenta,
+    this.tasaIGV = 18.0, // IGV por defecto 18%
     this.limiteIngresos,
     this.activo = true,
   });
@@ -21,6 +23,7 @@ class RegimenTributario {
       nombre: json['nombre'] ?? '',
       descripcion: json['descripcion'],
       tasaRenta: (json['tasa_renta'] ?? 0.0).toDouble(),
+      tasaIGV: (json['tasa_igv'] ?? 18.0).toDouble(),
       limiteIngresos: json['limite_ingresos']?.toDouble(),
       activo: json['activo'] ?? true,
     );
@@ -32,18 +35,23 @@ class RegimenTributario {
       'nombre': nombre,
       'descripcion': descripcion,
       'tasa_renta': tasaRenta,
+      'tasa_igv': tasaIGV,
       'limite_ingresos': limiteIngresos,
       'activo': activo,
     };
   }
 
   String get tasaRentaFormateada {
-    return '${(tasaRenta * 100).toStringAsFixed(1)}%';
+    return '${tasaRenta.toStringAsFixed(1)}%';
+  }
+
+  String get tasaIGVFormateada {
+    return '${tasaIGV.toStringAsFixed(1)}%';
   }
 
   bool get pagaIGV {
-    // RUS no paga IGV
-    return !nombre.toLowerCase().contains('rus');
+    // RUS no paga IGV (tasa IGV = 0%)
+    return tasaIGV > 0;
   }
 
   RegimenTributario copyWith({
@@ -51,6 +59,7 @@ class RegimenTributario {
     String? nombre,
     String? descripcion,
     double? tasaRenta,
+    double? tasaIGV,
     double? limiteIngresos,
     bool? activo,
   }) {
@@ -59,6 +68,7 @@ class RegimenTributario {
       nombre: nombre ?? this.nombre,
       descripcion: descripcion ?? this.descripcion,
       tasaRenta: tasaRenta ?? this.tasaRenta,
+      tasaIGV: tasaIGV ?? this.tasaIGV,
       limiteIngresos: limiteIngresos ?? this.limiteIngresos,
       activo: activo ?? this.activo,
     );
@@ -66,7 +76,7 @@ class RegimenTributario {
 
   @override
   String toString() {
-    return 'RegimenTributario(id: $id, nombre: $nombre, tasaRenta: $tasaRentaFormateada)';
+    return 'RegimenTributario(id: $id, nombre: $nombre, tasaRenta: $tasaRentaFormateada, tasaIGV: $tasaIGVFormateada)';
   }
 
   @override

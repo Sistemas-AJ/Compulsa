@@ -23,7 +23,7 @@ class ActividadReciente {
       'tipo': tipo,
       'descripcion': descripcion,
       'datos': datos,
-      'fechaCreacion': fechaCreacion.toIso8601String(),
+      'fecha_creacion': fechaCreacion.toIso8601String(),
       'icono': icono,
       'color': color,
     };
@@ -35,7 +35,7 @@ class ActividadReciente {
       tipo: json['tipo'] as String,
       descripcion: json['descripcion'] as String,
       datos: Map<String, dynamic>.from(json['datos']),
-      fechaCreacion: DateTime.parse(json['fechaCreacion'] as String),
+      fechaCreacion: DateTime.parse(json['fecha_creacion'] as String),
       icono: json['icono'] as String,
       color: json['color'] as String,
     );

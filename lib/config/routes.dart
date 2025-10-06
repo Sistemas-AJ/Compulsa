@@ -6,8 +6,7 @@ import '../screens/calculos/renta_screen.dart';
 import '../screens/declaraciones/declaraciones_screen.dart';
 import '../screens/declaraciones/declaracion_form_screen.dart';
 import '../screens/reportes/reportes_screen.dart';
-import '../screens/regimenes/regimenes_screen.dart';
-import '../screens/empresa/perfil_empresa_screen.dart';
+import '../screens/empresa/perfil_usuario_screen.dart';
 import '../screens/actividad/actividad_reciente_screen.dart';
 
 class AppRoutes {
@@ -19,8 +18,8 @@ class AppRoutes {
   static const String declaraciones = '/declaraciones';
   static const String declaracionForm = '/declaracion-form';
   static const String reportes = '/reportes';
-  static const String regimenes = '/regimenes';
-  static const String empresa = '/empresa';
+
+  static const String perfilUsuario = '/perfil-usuario';
   static const String actividadReciente = '/actividad-reciente';
   
   // Mapa de rutas
@@ -33,8 +32,7 @@ class AppRoutes {
       declaraciones: (context) => const DeclaracionesScreen(),
       declaracionForm: (context) => const DeclaracionFormScreen(),
       reportes: (context) => const ReportesScreen(),
-      regimenes: (context) => const RegimenesScreen(),
-      empresa: (context) => const PerfilEmpresaScreen(),
+      perfilUsuario: (context) => const PerfilUsuarioScreen(),
       actividadReciente: (context) => const ActividadRecienteScreen(),
     };
   }

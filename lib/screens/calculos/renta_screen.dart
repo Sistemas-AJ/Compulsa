@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/calculo_service.dart';
-import '../../services/regimen_tributario_service.dart';
+import '../../services/database_service.dart';
 import '../../services/actividad_reciente_service.dart';
 import '../../models/regimen_tributario.dart';
-import '../../config/routes.dart';
+import '../../widgets/compulsa_appbar.dart';
 
 class RentaScreen extends StatefulWidget {
   const RentaScreen({super.key});
@@ -31,7 +31,7 @@ class _RentaScreenState extends State<RentaScreen> {
 
   Future<void> _cargarRegimenes() async {
     try {
-      final regimenes = await RegimenTributarioService.getAllRegimenes();
+      final regimenes = await DatabaseService().obtenerRegimenes();
       setState(() {
         _regimenes = regimenes;
         _cargandoRegimenes = false;
@@ -55,10 +55,8 @@ class _RentaScreenState extends State<RentaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Impuesto a la Renta'),
-        backgroundColor: AppColors.rentaColor,
-        foregroundColor: Colors.white,
+      appBar: const CompulsaAppBar(
+        title: 'Impuesto a la Renta',
       ),
       body: _cargandoRegimenes 
         ? const Center(child: CircularProgressIndicator())
@@ -70,24 +68,14 @@ class _RentaScreenState extends State<RentaScreen> {
                     const Icon(Icons.warning, size: 64, color: Colors.orange),
                     const SizedBox(height: 16),
                     const Text(
-                      'No hay regímenes tributarios',
+                      'Cargando regímenes tributarios',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Debe crear al menos un régimen tributario para realizar cálculos',
+                      'Por favor espere mientras se cargan los regímenes disponibles',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () => AppRoutes.navigateTo(context, AppRoutes.regimenes),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Crear Régimen'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                      ),
                     ),
                   ],
                 ),
@@ -196,7 +184,7 @@ class _RentaScreenState extends State<RentaScreen> {
       final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
       await ActividadRecienteService.registrarCalculoRenta(
         ingresos: ingresos,
-        impuesto: resultado['impuestoCalculado'] ?? 0.0,
+        impuesto: resultado['impuesto_renta'] ?? 0.0,
         regimenNombre: regimenSeleccionado.nombre,
       );
       

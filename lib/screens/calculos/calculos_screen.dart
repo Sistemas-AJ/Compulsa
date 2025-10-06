@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../config/routes.dart';
 import '../../widgets/cards/dashboard_card.dart';
+import '../../widgets/compulsa_appbar.dart';
 
 class CalculosScreen extends StatelessWidget {
   const CalculosScreen({super.key});
@@ -9,10 +10,8 @@ class CalculosScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cálculos Tributarios'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+      appBar: const CompulsaAppBar(
+        title: 'Cálculos Tributarios',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

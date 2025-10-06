@@ -1,22 +1,25 @@
 class Empresa {
-  final int id;
+  final int? id;
   final int regimenId;
   final String nombreRazonSocial;
   final String ruc;
+  final String? imagenPerfil;
 
   Empresa({
-    required this.id,
+    this.id,
     required this.regimenId,
     required this.nombreRazonSocial,
     required this.ruc,
+    this.imagenPerfil,
   });
 
   factory Empresa.fromJson(Map<String, dynamic> json) {
     return Empresa(
-      id: json['id'],
-      regimenId: json['regimen_id'],
-      nombreRazonSocial: json['nombre_razon_social'],
-      ruc: json['ruc'],
+      id: json['id'] as int?,
+      regimenId: json['regimen_id'] as int,
+      nombreRazonSocial: json['nombre_razon_social'] as String,
+      ruc: json['ruc'] as String,
+      imagenPerfil: json['imagen_perfil'] as String?,
     );
   }
 
@@ -26,6 +29,7 @@ class Empresa {
       'regimen_id': regimenId,
       'nombre_razon_social': nombreRazonSocial,
       'ruc': ruc,
+      'imagen_perfil': imagenPerfil,
     };
   }
 }

@@ -2,6 +2,7 @@
 import '../../core/theme/app_colors.dart';
 import '../../services/calculo_service.dart';
 import '../../services/actividad_reciente_service.dart';
+import '../../widgets/compulsa_appbar.dart';
 
 class IgvScreen extends StatefulWidget {
   const IgvScreen({super.key});
@@ -73,10 +74,8 @@ class _IgvScreenState extends State<IgvScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cálculo de IGV'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+      appBar: const CompulsaAppBar(
+        title: 'Cálculo de IGV',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

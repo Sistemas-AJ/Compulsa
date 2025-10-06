@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../config/routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/cards/dashboard_card.dart';
+import '../../widgets/compulsa_appbar.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -9,10 +10,8 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Compulsa - Asistente Tributario'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+      appBar: const CompulsaAppBar(
+        title: 'Compulsa - Asistente Tributario',
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -181,32 +180,6 @@ class HomeScreen extends StatelessWidget {
           onTap: () => AppRoutes.navigateTo(context, AppRoutes.reportes),
         ),
         const SizedBox(height: 24),
-        
-        // Configuración
-        const Text(
-          'Configuración',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        DashboardCard(
-          icon: Icons.account_balance_wallet,
-          title: 'Regímenes Tributarios',
-          subtitle: 'Gestionar regímenes y tasas',
-          color: Colors.indigo,
-          onTap: () => AppRoutes.navigateTo(context, AppRoutes.regimenes),
-        ),
-        const SizedBox(height: 12),
-        DashboardCard(
-          icon: Icons.business,
-          title: 'Empresas',
-          subtitle: 'Gestionar empresas contribuyentes',
-          color: Colors.teal,
-          onTap: () => AppRoutes.navigateTo(context, AppRoutes.empresa),
-        ),
       ],
     );
   }

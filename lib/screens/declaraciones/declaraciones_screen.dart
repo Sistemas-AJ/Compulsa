@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../config/routes.dart';
+import '../../widgets/compulsa_appbar.dart';
 
 class DeclaracionesScreen extends StatefulWidget {
   const DeclaracionesScreen({super.key});
@@ -43,11 +44,9 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Declaraciones'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        actions: [
+      appBar: CompulsaAppBar(
+        title: 'Declaraciones',
+        additionalActions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: () {
