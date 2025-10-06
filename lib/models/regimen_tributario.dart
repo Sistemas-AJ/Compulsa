@@ -7,6 +7,11 @@ class RegimenTributario {
   final double? limiteIngresos;
   final bool activo;
 
+  // Constantes para MYPE
+  static const double limiteMyeBasico = 1605000.0; // S/ 1,605,000
+  static const double tasaMyeBasica = 1.0; // 1%
+  static const double tasaMyeElevada = 1.5; // 1.5%
+
   RegimenTributario({
     required this.id,
     required this.nombre,
@@ -52,6 +57,95 @@ class RegimenTributario {
   bool get pagaIGV {
     // RUS no paga IGV (tasa IGV = 0%)
     return tasaIGV > 0;
+  }
+
+  // Método para calcular coeficiente
+  static double calcularCoeficiente({
+    required double ingresos,
+    required double gastosDeducibles,
+  }) {
+    if (ingresos <= 0) return 0.0;
+    
+    double utilidad = ingresos - gastosDeducibles;
+    if (utilidad <= 0) return 0.0;
+    
+    return utilidad / ingresos;
+  }
+
+  // Método para determinar la tasa de renta aplicable para MYPE
+  static Map<String, dynamic> calcularTasaMyPE({
+    required double ingresos,
+    required double gastosDeducibles,
+    double? coeficientePersonalizado,
+  }) {
+    // Si los ingresos son menores o iguales al límite básico
+    if (ingresos <= limiteMyeBasico) {
+      return {
+        'tasa': tasaMyeBasica / 100, // 1%
+        'tipo': 'basica',
+        'descripcion': 'Tasa básica 1% (ingresos ≤ S/ ${limiteMyeBasico.toStringAsFixed(0)})',
+        'base': ingresos,
+      };
+    }
+
+    // Calcular coeficiente automático
+    double coeficienteAuto = calcularCoeficiente(
+      ingresos: ingresos,
+      gastosDeducibles: gastosDeducibles,
+    );
+
+    // Usar coeficiente personalizado si se proporciona
+    double coeficienteAUsar = coeficientePersonalizado ?? coeficienteAuto;
+    double tasaCoeficiente = coeficienteAUsar * 100;
+
+    // Si el coeficiente es menor a 1.5%, puede elegir
+    if (tasaCoeficiente < tasaMyeElevada) {
+      return {
+        'tasa': tasaMyeElevada / 100, // 1.5% (opción recomendada)
+        'tasaAlternativa': coeficienteAUsar, // Coeficiente como alternativa
+        'tipo': 'opcional',
+        'descripcion': 'Puede elegir: 1.5% fijo o coeficiente ${(coeficienteAUsar * 100).toStringAsFixed(2)}%',
+        'base': ingresos,
+        'coeficiente': coeficienteAUsar,
+        'coeficientePersonalizado': coeficientePersonalizado != null,
+      };
+    } else {
+      // Si el coeficiente es mayor o igual a 1.5%, debe usar el coeficiente
+      return {
+        'tasa': coeficienteAUsar,
+        'tipo': 'obligatorio_coeficiente',
+        'descripcion': 'Coeficiente obligatorio ${(coeficienteAUsar * 100).toStringAsFixed(2)}% (≥ 1.5%)',
+        'base': ingresos,
+        'coeficiente': coeficienteAUsar,
+        'coeficientePersonalizado': coeficientePersonalizado != null,
+      };
+    }
+  }
+
+  // Método para obtener la tasa aplicable según el régimen
+  double obtenerTasaAplicable({
+    double? ingresos,
+    double? gastosDeducibles,
+    double? coeficientePersonalizado,
+    bool usarCoeficiente = false,
+  }) {
+    // Para MYPE con cálculo especial
+    if (nombre.contains('MYPE') && ingresos != null) {
+      var resultado = calcularTasaMyPE(
+        ingresos: ingresos,
+        gastosDeducibles: gastosDeducibles ?? 0.0,
+        coeficientePersonalizado: coeficientePersonalizado,
+      );
+
+      if (resultado['tipo'] == 'opcional' && usarCoeficiente) {
+        return resultado['tasaAlternativa'];
+      }
+      
+      return resultado['tasa'];
+    }
+
+    // Para otros regímenes, usar la tasa base
+    return tasaRenta;
   }
 
   RegimenTributario copyWith({
@@ -114,13 +208,13 @@ extension RegimenTributarioEnumExtension on RegimenTributarioEnum {
   double get tasaRenta {
     switch (this) {
       case RegimenTributarioEnum.general:
-        return 0.295; // 29.5%
+        return 0.015; 
       case RegimenTributarioEnum.mype:
-        return 0.10; // 10%
+        return 0.001; 
       case RegimenTributarioEnum.especial:
-        return 0.015; // 1.5%
+        return 0.015; 
       case RegimenTributarioEnum.rus:
-        return 0.0; // No paga renta
+        return 0.0; 
     }
   }
 
@@ -128,3 +222,193 @@ extension RegimenTributarioEnumExtension on RegimenTributarioEnum {
     return this != RegimenTributarioEnum.rus;
   }
 }
+
+/// 🎯 **Función principal para calcular tasa de renta según régimen tributario**
+/// 
+/// Esta función implementa la lógica completa de cálculo de tasas de renta
+/// según las reglas específicas de cada régimen tributario peruano.
+/// 
+/// **Parámetros:**
+/// - `regimen`: El régimen tributario aplicable
+/// - `monto`: Monto base para evaluar límites (ingresos anuales)
+/// - `coeficiente`: Coeficiente opcional para régimen MYPE (formato decimal)
+/// 
+/// **Retorna:** Tasa de renta en formato decimal (ej: 0.015 = 1.5%)
+/// 
+/// **Excepciones:** 
+/// - `ArgumentError` si el coeficiente es negativo
+/// - `ArgumentError` si el monto es negativo
+double calcularTasaRenta(
+  RegimenTributarioEnum regimen, {
+  required double monto,
+  double? coeficiente,
+}) {
+  // 🔒 Validaciones de entrada
+  if (monto < 0) {
+    throw ArgumentError('El monto no puede ser negativo: $monto');
+  }
+  
+  if (coeficiente != null && coeficiente < 0) {
+    throw ArgumentError('El coeficiente no puede ser negativo: $coeficiente');
+  }
+
+  // 🎛️ Constantes del sistema tributario peruano
+  const double limiteMyPEBasico = 1605000.0; // S/ 1,605,000
+  const double tasaMyPEBasica = 0.01; // 1%
+  const double tasaEstandar = 0.015; // 1.5%
+  const double tasaRUS = 0.0; // 0% - RUS no paga renta
+
+  switch (regimen) {
+    // 🔹 RÉGIMEN GENERAL
+    case RegimenTributarioEnum.general:
+      // Siempre paga 1.5% sin excepciones
+      return tasaEstandar;
+
+    // 🔹 RÉGIMEN MYPE (Micro y Pequeña Empresa)
+    case RegimenTributarioEnum.mype:
+      // Evaluar límite de ingresos
+      if (monto <= limiteMyPEBasico) {
+        // 💰 Monto ≤ S/ 1,605,000: Tasa básica del 1%
+        return tasaMyPEBasica;
+      } else {
+        // 💸 Monto > S/ 1,605,000: Lógica de coeficiente
+        if (coeficiente == null) {
+          // Sin coeficiente específico: usar 1.5% estándar
+          return tasaEstandar;
+        } else {
+          // Con coeficiente: usar el menor entre coeficiente y 1.5%
+          // Esto garantiza que nunca se pague más del máximo legal
+          return coeficiente < tasaEstandar ? coeficiente : tasaEstandar;
+        }
+      }
+
+    // 🔹 RÉGIMEN ESPECIAL
+    case RegimenTributarioEnum.especial:
+      // Siempre paga 1.5% independientemente del monto
+      return tasaEstandar;
+
+    // 🔹 RUS (Régimen Único Simplificado)
+    case RegimenTributarioEnum.rus:
+      // RUS no paga impuesto a la renta
+      return tasaRUS;
+  }
+}
+
+/// 🧮 **Utilidades adicionales para cálculos tributarios**
+extension CalculosTributariosUtils on RegimenTributarioEnum {
+  
+  /// 📊 Calcula el impuesto a la renta basado en la tasa calculada
+  /// 
+  /// **Parámetros:**
+  /// - `baseImponible`: Base sobre la cual se calcula el impuesto
+  /// - `monto`: Monto de referencia para límites
+  /// - `coeficiente`: Coeficiente opcional
+  /// 
+  /// **Retorna:** Monto del impuesto a pagar
+  double calcularImpuestoRenta({
+    required double baseImponible,
+    required double monto,
+    double? coeficiente,
+  }) {
+    if (baseImponible <= 0) return 0.0;
+    
+    final tasa = calcularTasaRenta(
+      this,
+      monto: monto,
+      coeficiente: coeficiente,
+    );
+    
+    return baseImponible * tasa;
+  }
+
+  /// 📈 Obtiene información detallada del cálculo
+  /// 
+  /// **Retorna:** Mapa con detalles del cálculo realizado
+  Map<String, dynamic> obtenerDetalleCalculo({
+    required double monto,
+    double? coeficiente,
+  }) {
+    final tasa = calcularTasaRenta(
+      this,
+      monto: monto,
+      coeficiente: coeficiente,
+    );
+    
+    final tasaPorcentaje = (tasa * 100).toStringAsFixed(2);
+    
+    String explicacion;
+    switch (this) {
+      case RegimenTributarioEnum.general:
+        explicacion = 'Régimen General: Tasa fija del 1.5%';
+        break;
+      case RegimenTributarioEnum.mype:
+        if (monto <= 1605000.0) {
+          explicacion = 'MYPE: Ingresos ≤ S/ 1,605,000 - Tasa básica del 1%';
+        } else {
+          if (coeficiente == null) {
+            explicacion = 'MYPE: Ingresos > S/ 1,605,000 - Tasa estándar del 1.5%';
+          } else {
+            final coefPorcentaje = (coeficiente * 100).toStringAsFixed(2);
+            explicacion = coeficiente < 0.015 
+                ? 'MYPE: Usando coeficiente $coefPorcentaje% (menor a 1.5%)'
+                : 'MYPE: Coeficiente $coefPorcentaje% limitado a 1.5% máximo';
+          }
+        }
+        break;
+      case RegimenTributarioEnum.especial:
+        explicacion = 'Régimen Especial: Tasa fija del 1.5%';
+        break;
+      case RegimenTributarioEnum.rus:
+        explicacion = 'RUS: Sin impuesto a la renta';
+        break;
+    }
+    
+    return {
+      'regimen': nombre,
+      'tasa_decimal': tasa,
+      'tasa_porcentaje': '$tasaPorcentaje%',
+      'monto_evaluado': monto,
+      'coeficiente_usado': coeficiente,
+      'explicacion': explicacion,
+      'fecha_calculo': DateTime.now().toIso8601String(),
+    };
+  }
+
+  /// 🎯 Verifica si el régimen permite uso de coeficientes
+  bool get permiteCoeficiente => this == RegimenTributarioEnum.mype;
+  
+  /// 📏 Obtiene el límite de monto donde cambia la tasa (solo MYPE)
+  double? get limiteMontoEspecial => 
+      this == RegimenTributarioEnum.mype ? 1605000.0 : null;
+}
+
+/// 🧪 **Ejemplos de uso y casos de prueba**
+/// 
+/// ```dart
+/// // Ejemplos básicos
+/// final tasaMype1 = calcularTasaRenta(RegimenTributarioEnum.mype, monto: 1000000); 
+/// // → 0.01 (1%)
+/// 
+/// final tasaMype2 = calcularTasaRenta(RegimenTributarioEnum.mype, 
+///   monto: 1800000, coeficiente: 0.012); 
+/// // → 0.012 (1.2%)
+/// 
+/// final tasaMype3 = calcularTasaRenta(RegimenTributarioEnum.mype, 
+///   monto: 1800000, coeficiente: 0.018); 
+/// // → 0.015 (1.5% - limitado)
+/// 
+/// final tasaGeneral = calcularTasaRenta(RegimenTributarioEnum.general, monto: 5000000); 
+/// // → 0.015 (1.5%)
+/// 
+/// // Uso con utilidades
+/// final impuesto = RegimenTributarioEnum.mype.calcularImpuestoRenta(
+///   baseImponible: 800000, 
+///   monto: 1200000
+/// ); // → 8000 (800000 * 0.01)
+/// 
+/// final detalle = RegimenTributarioEnum.mype.obtenerDetalleCalculo(
+///   monto: 1800000, 
+///   coeficiente: 0.012
+/// );
+/// // → Map con información completa del cálculo
+/// ```

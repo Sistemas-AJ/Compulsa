@@ -17,6 +17,7 @@ class RentaScreen extends StatefulWidget {
 class _RentaScreenState extends State<RentaScreen> {
   final _ingresosController = TextEditingController();
   final _gastosController = TextEditingController();
+  final _coeficienteController = TextEditingController();
   
   int? _regimenSeleccionado;
   Map<String, dynamic>? _resultadoCalculo;
@@ -24,6 +25,11 @@ class _RentaScreenState extends State<RentaScreen> {
   
   List<RegimenTributario> _regimenes = [];
   bool _cargandoRegimenes = true;
+  
+  // Nuevos campos para manejo de coeficientes MYPE
+  bool _mostrarOpcionesMyPE = false;
+  bool _usarCoeficiente = false;
+  Map<String, dynamic>? _opcionesMyPE;
 
   @override
   void initState() {
@@ -250,6 +256,13 @@ class _RentaScreenState extends State<RentaScreen> {
             ),
             const SizedBox(height: 16),
             
+            // Campo de coeficiente personalizado (solo para MYPE con ingresos altos)
+            if (_mostrarOpcionesMyPE && _regimenSeleccionado != null)
+              _buildCampoCoeficiente(),
+            
+            if (_mostrarOpcionesMyPE && _regimenSeleccionado != null)
+              const SizedBox(height: 16),
+            
             // Campo de gastos deducibles
             Container(
               decoration: BoxDecoration(
@@ -365,6 +378,28 @@ class _RentaScreenState extends State<RentaScreen> {
       return;
     }
 
+    // Verificar si es MYPE y mostrar opciones si aplica
+    final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
+    if (regimenSeleccionado.nombre.toUpperCase().contains('MYPE') && ingresos > RegimenTributario.limiteMyeBasico) {
+      // Calcular opciones de MYPE
+      final opciones = RegimenTributario.calcularTasaMyPE(
+        ingresos: ingresos,
+        gastosDeducibles: gastos,
+        coeficientePersonalizado: double.tryParse(_coeficienteController.text),
+      );
+      
+      setState(() {
+        _opcionesMyPE = opciones;
+        _mostrarOpcionesMyPE = true;
+      });
+
+      // Si es opcional, mostrar diálogo para elegir
+      if (opciones['tipo'] == 'opcional') {
+        await _mostrarDialogoOpcionesMYPE(opciones);
+        return;
+      }
+    }
+
     setState(() {
       _isCalculating = true;
     });
@@ -374,12 +409,13 @@ class _RentaScreenState extends State<RentaScreen> {
         ingresos: ingresos,
         gastos: gastos,
         regimenId: _regimenSeleccionado!,
+        coeficientePersonalizado: double.tryParse(_coeficienteController.text),
+        usarCoeficiente: _usarCoeficiente,
       );
 
       if (!mounted) return;
       
       // Registrar actividad reciente
-      final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
       await ActividadRecienteService.registrarCalculoRenta(
         ingresos: ingresos,
         impuesto: resultado['impuesto_renta'] ?? 0.0,
@@ -522,10 +558,285 @@ class _RentaScreenState extends State<RentaScreen> {
     );
   }
   
+  Widget _buildCampoCoeficiente() {
+    if (_opcionesMyPE == null) return const SizedBox();
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.warning.withOpacity(0.5)),
+        color: AppColors.warning.withOpacity(0.05),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.calculate, size: 16, color: AppColors.warning),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Coeficiente MYPE',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.warning,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _opcionesMyPE!['descripcion'] ?? '',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_opcionesMyPE!['tipo'] == 'opcional') ...[
+              Text(
+                'Coeficiente calculado: ${(_opcionesMyPE!['coeficiente'] * 100).toStringAsFixed(2)}%',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<bool>(
+                      title: const Text(
+                        '1.5% fijo',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      value: false,
+                      groupValue: _usarCoeficiente,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _usarCoeficiente = value ?? false;
+                        });
+                      },
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<bool>(
+                      title: Text(
+                        'Coeficiente ${(_opcionesMyPE!['coeficiente'] * 100).toStringAsFixed(2)}%',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      value: true,
+                      groupValue: _usarCoeficiente,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _usarCoeficiente = value ?? false;
+                        });
+                      },
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (_opcionesMyPE!['tipo'] != 'basica') ...[
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _coeficienteController,
+                decoration: const InputDecoration(
+                  labelText: 'Coeficiente Personalizado (opcional)',
+                  hintText: 'Ingrese coeficiente decimal (ej: 0.12 para 12%)',
+                  suffixText: '%',
+                  border: OutlineInputBorder(),
+                  helperText: 'Deje vacío para usar el coeficiente calculado',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                onChanged: (value) {
+                  final coef = double.tryParse(value);
+                  if (coef != null && coef > 0) {
+                    final nuevasOpciones = RegimenTributario.calcularTasaMyPE(
+                      ingresos: double.tryParse(_ingresosController.text) ?? 0.0,
+                      gastosDeducibles: double.tryParse(_gastosController.text) ?? 0.0,
+                      coeficientePersonalizado: coef / 100,
+                    );
+                    setState(() {
+                      _opcionesMyPE = nuevasOpciones;
+                    });
+                  }
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _mostrarDialogoOpcionesMYPE(Map<String, dynamic> opciones) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(Icons.info_outline, color: AppColors.warning),
+              const SizedBox(width: 8),
+              const Text('Opciones de Cálculo MYPE'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Sus ingresos superan S/ ${RegimenTributario.limiteMyeBasico.toStringAsFixed(0)}. '
+                'Puede elegir entre:',
+                style: const TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '1. Tasa fija: 1.5%',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const Text(
+                      'Cálculo sencillo sobre la renta neta',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '2. Coeficiente: ${(opciones['coeficiente'] * 100).toStringAsFixed(2)}%',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const Text(
+                      'Basado en sus gastos deducibles',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Recomendación: Use el coeficiente ya que es menor (${(opciones['coeficiente'] * 100).toStringAsFixed(2)}% < 1.5%)',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.success,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _usarCoeficiente = false;
+                });
+                Navigator.of(context).pop();
+                _continuarCalculo();
+              },
+              child: const Text('Usar 1.5%'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _usarCoeficiente = true;
+                });
+                Navigator.of(context).pop();
+                _continuarCalculo();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+              ),
+              child: Text('Usar Coeficiente ${(opciones['coeficiente'] * 100).toStringAsFixed(2)}%'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _continuarCalculo() async {
+    final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
+    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
+
+    setState(() {
+      _isCalculating = true;
+    });
+
+    try {
+      final resultado = await CalculoService.calcularRenta(
+        ingresos: ingresos,
+        gastos: gastos,
+        regimenId: _regimenSeleccionado!,
+        coeficientePersonalizado: double.tryParse(_coeficienteController.text),
+        usarCoeficiente: _usarCoeficiente,
+      );
+
+      if (!mounted) return;
+      
+      // Registrar actividad reciente
+      final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
+      await ActividadRecienteService.registrarCalculoRenta(
+        ingresos: ingresos,
+        impuesto: resultado['impuesto_renta'] ?? 0.0,
+        regimenNombre: regimenSeleccionado.nombre,
+      );
+      
+      setState(() {
+        _resultadoCalculo = resultado;
+        _isCalculating = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isCalculating = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al calcular: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _ingresosController.dispose();
     _gastosController.dispose();
+    _coeficienteController.dispose();
     super.dispose();
   }
 }

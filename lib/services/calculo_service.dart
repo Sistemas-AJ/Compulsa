@@ -1,6 +1,7 @@
 import '../core/constants/api_config.dart';
 import 'database_service.dart';
 import '../models/historial_igv.dart';
+import '../models/regimen_tributario.dart';
 import 'historial_igv_service.dart';
 
 class CalculoService {
@@ -130,6 +131,8 @@ class CalculoService {
     required double ingresos,
     required double gastos,
     required int regimenId,
+    double? coeficientePersonalizado,
+    bool usarCoeficiente = false,
   }) async {
     // Simular llamada asíncrona
     await Future.delayed(AppConfig.simulatedDelay);
@@ -140,42 +143,104 @@ class CalculoService {
       throw Exception('Régimen tributario no encontrado');
     }
 
-    double impuestoRenta = 0.0;
-    double rentaNeta = 0.0;
-    double baseImponible = 0.0;
-    String tipoCalculo = '';
-
-    // Determinar el tipo de cálculo según el régimen
+    // 🎯 Determinar el régimen enum basado en el nombre
+    RegimenTributarioEnum regimenEnum;
     final nombreRegimen = regimen.nombre.toUpperCase();
     
-    if (nombreRegimen.contains('NRUS')) {
-      // NRUS: No paga impuesto a la renta
-      baseImponible = ingresos;
-      rentaNeta = ingresos - gastos;
-      impuestoRenta = 0.0;
-      tipoCalculo = 'NRUS - Sin impuesto a la renta';
-    } else if (nombreRegimen.contains('RER')) {
-      // RER: 1.0% sobre ingresos netos (ventas)
-      baseImponible = ingresos;
-      rentaNeta = ingresos - gastos;
-      impuestoRenta = ingresos * (regimen.tasaRenta / 100); // 1.0% sobre ventas
-      tipoCalculo = 'RER - ${regimen.tasaRenta}% sobre ingresos netos';
+    if (nombreRegimen.contains('NRUS') || nombreRegimen.contains('RUS')) {
+      regimenEnum = RegimenTributarioEnum.rus;
+    } else if (nombreRegimen.contains('RER') || nombreRegimen.contains('ESPECIAL')) {
+      regimenEnum = RegimenTributarioEnum.especial;
     } else if (nombreRegimen.contains('MYPE')) {
-      // MYPE: 10% sobre renta neta (después de gastos)
-      rentaNeta = ingresos - gastos;
-      baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
-      impuestoRenta = rentaNeta > 0 ? rentaNeta * (regimen.tasaRenta / 100) : 0.0;
-      tipoCalculo = 'MYPE - ${regimen.tasaRenta}% sobre renta neta';
+      regimenEnum = RegimenTributarioEnum.mype;
     } else {
-      // Régimen General: 29.5% sobre renta neta
-      rentaNeta = ingresos - gastos;
-      baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
-      impuestoRenta = rentaNeta > 0 ? rentaNeta * (regimen.tasaRenta / 100) : 0.0;
-      tipoCalculo = 'General - ${regimen.tasaRenta}% sobre renta neta';
+      regimenEnum = RegimenTributarioEnum.general;
+    }
+
+    // 📊 Usar la nueva función optimizada de cálculo de tasa
+    double tasaCalculada;
+    try {
+      tasaCalculada = calcularTasaRenta(
+        regimenEnum,
+        monto: ingresos,
+        coeficiente: usarCoeficiente ? coeficientePersonalizado : null,
+      );
+    } catch (e) {
+      throw Exception('Error en cálculo de tasa: $e');
+    }
+
+    // 🧮 Calcular valores base
+    final double rentaNeta = ingresos - gastos;
+    final double tasaPorcentaje = tasaCalculada * 100;
+    
+    double baseImponible;
+    double impuestoRenta;
+    String tipoCalculo;
+
+    // 📈 Determinar base imponible según el régimen
+    switch (regimenEnum) {
+      case RegimenTributarioEnum.rus:
+        // RUS no paga impuesto a la renta
+        baseImponible = ingresos;
+        impuestoRenta = 0.0;
+        tipoCalculo = 'RUS - Sin impuesto a la renta';
+        break;
+        
+      case RegimenTributarioEnum.especial:
+        // RER: 1.0% sobre ingresos brutos
+        if (nombreRegimen.contains('RER')) {
+          baseImponible = ingresos;
+          impuestoRenta = ingresos * tasaCalculada;
+          tipoCalculo = 'RER - ${tasaPorcentaje.toStringAsFixed(1)}% sobre ingresos brutos';
+        } else {
+          // Régimen Especial: 1.5% sobre renta neta
+          baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
+          impuestoRenta = rentaNeta > 0 ? rentaNeta * tasaCalculada : 0.0;
+          tipoCalculo = 'Especial - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
+        }
+        break;
+        
+      case RegimenTributarioEnum.mype:
+        // MYPE: Lógica especial según el monto de ingresos
+        if (ingresos <= RegimenTributario.limiteMyeBasico) {
+          // Tasa básica del 1% sobre ingresos
+          baseImponible = ingresos;
+          impuestoRenta = ingresos * tasaCalculada;
+          tipoCalculo = 'MYPE - ${tasaPorcentaje.toStringAsFixed(1)}% sobre ingresos (≤ S/ ${RegimenTributario.limiteMyeBasico.toStringAsFixed(0)})';
+        } else {
+          // Tasa variable sobre renta neta
+          baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
+          impuestoRenta = rentaNeta > 0 ? rentaNeta * tasaCalculada : 0.0;
+          if (coeficientePersonalizado != null && usarCoeficiente) {
+            tipoCalculo = 'MYPE - Coeficiente ${tasaPorcentaje.toStringAsFixed(2)}% sobre renta neta';
+          } else {
+            tipoCalculo = 'MYPE - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
+          }
+        }
+        break;
+        
+      case RegimenTributarioEnum.general:
+        // Régimen General: 1.5% sobre renta neta
+        baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
+        impuestoRenta = rentaNeta > 0 ? rentaNeta * tasaCalculada : 0.0;
+        tipoCalculo = 'General - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
+        break;
     }
 
     final double rentaPorPagar = impuestoRenta > 0 ? impuestoRenta : 0.0;
     final double perdida = rentaNeta < 0 ? rentaNeta.abs() : 0.0;
+
+    // 📋 Obtener detalles adicionales del cálculo
+    Map<String, dynamic>? detalleCalculo;
+    try {
+      detalleCalculo = regimenEnum.obtenerDetalleCalculo(
+        monto: ingresos,
+        coeficiente: usarCoeficiente ? coeficientePersonalizado : null,
+      );
+    } catch (e) {
+      // En caso de error, continuar sin detalles adicionales
+      detalleCalculo = null;
+    }
 
     return {
       'ingresos': ingresos,
@@ -185,12 +250,19 @@ class CalculoService {
       'impuesto_renta': impuestoRenta,
       'renta_por_pagar': rentaPorPagar,
       'perdida': perdida,
-      'tasa_renta': regimen.tasaRenta,
+      'tasa_renta': tasaPorcentaje,
+      'tasa_decimal': tasaCalculada,
       'regimen_nombre': regimen.nombre,
+      'regimen_enum': regimenEnum.nombre,
       'tipo_calculo': tipoCalculo,
       'fecha_calculo': DateTime.now().toIso8601String(),
       'tiene_perdida': rentaNeta < 0,
       'debe_pagar': rentaPorPagar > 0,
+      // Información adicional optimizada
+      'detalle_calculo': detalleCalculo,
+      'coeficiente_personalizado': coeficientePersonalizado,
+      'usando_coeficiente': usarCoeficiente,
+      'metodo_calculo': 'funcion_optimizada_v2',
     };
   }
 
