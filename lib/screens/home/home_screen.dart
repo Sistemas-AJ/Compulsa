@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../widgets/cards/dashboard_card.dart';
 import '../../widgets/compulsa_appbar.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -10,29 +9,25 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: const CompulsaAppBar(
-        title: 'Compulsa - Asistente Tributario',
+        title: 'Compulsa',
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWelcomeSection(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
+            _buildStatsSection(context),
+            const SizedBox(height: 32),
             _buildQuickAccessSection(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             _buildMainActionsSection(context),
-            const SizedBox(height: 24),
-            _buildRecentActivitySection(context),
+            const SizedBox(height: 20),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => AppRoutes.navigateTo(context, AppRoutes.calculos),
-        icon: const Icon(Icons.calculate),
-        label: const Text('Calcular'),
-        backgroundColor: AppColors.secondary,
       ),
     );
   }
@@ -40,69 +35,211 @@ class HomeScreen extends StatelessWidget {
   Widget _buildWelcomeSection() {
     return Container(
       width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.primary.withValues(red: 0.2, green: 0.3, blue: 0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.4),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.monetization_on,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '¡Bienvenido a Compulsa!',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'Tu asistente tributario inteligente',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+                width: 1,
+              ),
+            ),
+            child: const Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.calculate_outlined, color: Colors.white, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Cálculo automático de IGV \ny Renta',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Gestión de saldos a favor',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.assessment_outlined, color: Colors.white, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Reportes y análisis tributario',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsSection(BuildContext context) {
+    return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.3),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '¡Bienvenido!',
+          const Text(
+            'Resumen del Mes',
             style: TextStyle(
-              fontSize: 28,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.textPrimary,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.trending_up,
+                  title: 'IGV Calculado',
+                  value: 'S/ 0.00',
+                  color: AppColors.igvColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.account_balance,
+                  title: 'Renta Calculada',
+                  value: 'S/ 0.00',
+                  color: AppColors.rentaColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
           Text(
-            'Tu asistente tributario inteligente para Perú',
+            title,
             style: TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
+              fontSize: 12,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white70, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Cálculo automático de IGV y Renta',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ],
-          ),
-          SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white70, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Gestión de saldos a favor',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ],
-          ),
-          SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white70, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Control fiscal completo',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ],
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -113,32 +250,38 @@ class HomeScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Acceso Rápido',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          children: [
+            const Icon(Icons.flash_on, color: AppColors.primary, size: 24),
+            const SizedBox(width: 8),
+            const Text(
+              'Acceso Rápido',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         Row(
           children: [
             Expanded(
               child: _buildQuickActionCard(
                 context,
-                icon: Icons.calculate,
+                icon: Icons.calculate_outlined,
                 title: 'Calcular IGV',
                 subtitle: 'Impuesto General a las Ventas',
                 color: AppColors.igvColor,
                 onTap: () => AppRoutes.navigateTo(context, AppRoutes.igv),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
               child: _buildQuickActionCard(
                 context,
-                icon: Icons.account_balance_wallet,
+                icon: Icons.account_balance_wallet_outlined,
                 title: 'Calcular Renta',
                 subtitle: 'Impuesto a la Renta',
                 color: AppColors.rentaColor,
@@ -155,95 +298,120 @@ class HomeScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Funciones Principales',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        DashboardCard(
-          icon: Icons.account_balance,
-          title: 'Declaraciones',
-          subtitle: 'Gestionar declaraciones mensuales',
-          color: AppColors.igvColor,
-          onTap: () => AppRoutes.navigateTo(context, AppRoutes.declaraciones),
-        ),
-        const SizedBox(height: 12),
-        DashboardCard(
-          icon: Icons.bar_chart,
-          title: 'Reportes',
-          subtitle: 'Análisis y reportes tributarios',
-          color: AppColors.rentaColor,
-          onTap: () => AppRoutes.navigateTo(context, AppRoutes.reportes),
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
-  }
-
-  Widget _buildRecentActivitySection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
+            const Icon(Icons.dashboard_outlined, color: AppColors.primary, size: 24),
+            const SizedBox(width: 8),
             const Text(
-              'Actividad Reciente',
+              'Funciones Principales',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
               ),
             ),
-            TextButton.icon(
-              onPressed: () => AppRoutes.navigateTo(context, AppRoutes.actividadReciente),
-              icon: const Icon(Icons.history, size: 18),
-              label: const Text('Ver todo'),
-            ),
           ],
         ),
+        const SizedBox(height: 20),
+        _buildMainActionCard(
+          context,
+          icon: Icons.description_outlined,
+          title: 'Declaraciones',
+          subtitle: 'Gestionar declaraciones mensuales y anuales',
+          color: AppColors.igvColor,
+          onTap: () => AppRoutes.navigateTo(context, AppRoutes.declaraciones),
+        ),
         const SizedBox(height: 16),
-        Card(
+        _buildMainActionCard(
+          context,
+          icon: Icons.analytics_outlined,
+          title: 'Reportes',
+          subtitle: 'Análisis y reportes tributarios detallados',
+          color: AppColors.rentaColor,
+          onTap: () => AppRoutes.navigateTo(context, AppRoutes.reportes),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMainActionCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            padding: const EdgeInsets.all(20),
+            child: Row(
               children: [
-                const Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.blue),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Aquí verás tu actividad real una vez que realices cálculos, configuraciones o creaciones.',
-                        style: TextStyle(fontSize: 14),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => AppRoutes.navigateTo(context, AppRoutes.actividadReciente),
-                    icon: const Icon(Icons.history),
-                    label: const Text('Ver Actividad Reciente'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: AppColors.textSecondary,
+                  size: 16,
                 ),
               ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
+
 
   Widget _buildQuickActionCard(
     BuildContext context, {
@@ -253,39 +421,76 @@ class HomeScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 4,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(
-                icon,
-                size: 32,
-                color: color,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        color,
+                        color.withValues(red: color.red * 0.8, green: color.green * 0.8, blue: color.blue * 0.8),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 36,
+                    color: const Color.fromARGB(255, 0, 0, 0),
+                  ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -97,33 +97,138 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
 
   Future<void> _seleccionarImagen() async {
     try {
-      final XFile? image = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 512,
-        maxHeight: 512,
-        imageQuality: 85,
+      // Mostrar opciones de selección
+      final ImageSource? source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Seleccionar imagen de perfil',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildImageSourceOption(
+                    icon: Icons.camera_alt,
+                    label: 'Cámara',
+                    onTap: () => Navigator.pop(context, ImageSource.camera),
+                  ),
+                  _buildImageSourceOption(
+                    icon: Icons.photo_library,
+                    label: 'Galería',
+                    onTap: () => Navigator.pop(context, ImageSource.gallery),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
       );
-      
-      if (image != null) {
-        // Guardar la imagen en el directorio de la aplicación
-        final Directory appDir = await getApplicationDocumentsDirectory();
-        final String fileName = 'perfil_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final String localPath = '${appDir.path}/$fileName';
+
+      if (source != null) {
+        final XFile? image = await _picker.pickImage(
+          source: source,
+          maxWidth: 512,
+          maxHeight: 512,
+          imageQuality: 85,
+        );
         
-        // Copiar la imagen al directorio local
-        await File(image.path).copy(localPath);
-        
-        setState(() {
-          _imagenPerfilPath = localPath;
-        });
+        if (image != null) {
+          // Crear directorio específico para imágenes de perfil
+          final Directory appDir = await getApplicationDocumentsDirectory();
+          final Directory profileDir = Directory('${appDir.path}/profile_images');
+          
+          if (!await profileDir.exists()) {
+            await profileDir.create(recursive: true);
+          }
+          
+          // Eliminar imagen anterior si existe
+          if (_imagenPerfilPath != null && File(_imagenPerfilPath!).existsSync()) {
+            try {
+              await File(_imagenPerfilPath!).delete();
+            } catch (e) {
+              print('Error eliminando imagen anterior: $e');
+            }
+          }
+          
+          final String fileName = 'perfil_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          final String localPath = '${profileDir.path}/$fileName';
+          
+          // Copiar la imagen al directorio local
+          await File(image.path).copy(localPath);
+          
+          setState(() {
+            _imagenPerfilPath = localPath;
+          });
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Imagen actualizada correctamente'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al seleccionar imagen: $e')),
+          SnackBar(
+            content: Text('Error al seleccionar imagen: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 32, color: Theme.of(context).primaryColor),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _guardarPerfil() async {
@@ -208,50 +313,81 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withOpacity(0.8)],
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withValues(red: 0.2, green: 0.3, blue: 0.8),
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(35),
+          bottomRight: Radius.circular(35),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 50, 24, 32),
       child: Column(
         children: [
-          const SizedBox(height: 20),
           GestureDetector(
             onTap: _modoEdicion || _empresaActual == null ? _seleccionarImagen : null,
             child: Stack(
               children: [
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white.withOpacity(0.2),
-                  backgroundImage: _imagenPerfilPath != null && File(_imagenPerfilPath!).existsSync()
-                      ? FileImage(File(_imagenPerfilPath!))
-                      : null,
-                  child: _imagenPerfilPath == null || !File(_imagenPerfilPath!).existsSync()
-                      ? const Icon(
-                          Icons.business,
-                          size: 50,
-                          color: Colors.white,
-                        )
-                      : null,
+                Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    backgroundImage: _imagenPerfilPath != null && File(_imagenPerfilPath!).existsSync()
+                        ? FileImage(File(_imagenPerfilPath!))
+                        : null,
+                    child: _imagenPerfilPath == null || !File(_imagenPerfilPath!).existsSync()
+                        ? const Icon(
+                            Icons.business_center,
+                            size: 60,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
                 ),
                 if (_modoEdicion || _empresaActual == null)
                   Positioned(
                     bottom: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.blue.shade600, Colors.blue.shade400],
+                        ),
                         shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.blue.withValues(alpha: 0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: const Icon(
                         Icons.camera_alt,
-                        size: 20,
+                        size: 24,
                         color: Colors.white,
                       ),
                     ),
@@ -259,24 +395,46 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            _empresaActual?.nombreRazonSocial ?? 'Mi Empresa',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
             ),
-            textAlign: TextAlign.center,
+            child: Column(
+              children: [
+                Text(
+                  _empresaActual?.nombreRazonSocial ?? 'Configurar Empresa',
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                if (_empresaActual?.ruc != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'RUC: ${_empresaActual!.ruc}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-          if (_empresaActual?.ruc != null)
-            Text(
-              'RUC: ${_empresaActual!.ruc}',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.white70,
-              ),
-            ),
         ],
       ),
     );
@@ -285,63 +443,98 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
   Widget _buildRegimenInfo() {
     if (_regimenActual == null) return const SizedBox.shrink();
     
-    return Card(
-      margin: const EdgeInsets.all(16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      margin: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(Icons.account_balance, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 12),
-                const Text(
-                  'Régimen Tributario',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withValues(alpha: 0.8)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.account_balance, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Régimen Tributario Activo',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.withValues(alpha: 0.1),
+                    Colors.blue.withValues(alpha: 0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 1.5),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    _regimenActual!.nombre,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
+                  Row(
+                    children: [
+                      Icon(Icons.verified, color: Colors.blue.shade600, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _regimenActual!.nombre,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
                         child: _buildTasaCard(
                           'Impuesto a la Renta',
                           _regimenActual!.tasaRentaFormateada,
-                          Colors.orange,
+                          Colors.orange.shade600,
                           Icons.trending_up,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: _buildTasaCard(
                           'IGV',
                           _regimenActual!.tasaIGVFormateada,
-                          _regimenActual!.pagaIGV ? Colors.green : Colors.grey,
-                          Icons.receipt,
+                          _regimenActual!.pagaIGV ? Colors.green.shade600 : Colors.grey.shade500,
+                          Icons.receipt_long,
                         ),
                       ),
                     ],
@@ -357,30 +550,47 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
 
   Widget _buildTasaCard(String titulo, String tasa, Color color, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 20),
-          const SizedBox(height: 4),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(height: 8),
           Text(
             titulo,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: color,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
             tasa,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -391,29 +601,58 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
   }
 
   Widget _buildFormulario() {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    return Container(
+      margin: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Información de la Empresa',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.edit_document, 
+                      color: Theme.of(context).primaryColor, 
+                      size: 24
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Información de la Empresa',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
                   ),
                   if (!_modoEdicion && _empresaActual != null)
-                    IconButton(
-                      onPressed: () => setState(() => _modoEdicion = true),
-                      icon: const Icon(Icons.edit),
-                      tooltip: 'Editar información',
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: IconButton(
+                        onPressed: () => setState(() => _modoEdicion = true),
+                        icon: const Icon(Icons.edit, color: Colors.blue),
+                        tooltip: 'Editar información',
+                      ),
                     ),
                 ],
               ),
@@ -421,11 +660,37 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
               TextFormField(
                 controller: _nombreController,
                 enabled: _modoEdicion || _empresaActual == null,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Nombre o Razón Social',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.business),
+                  hintText: 'Ingrese el nombre de su empresa',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: (_modoEdicion || _empresaActual == null) 
+                      ? Colors.grey.shade50 
+                      : Colors.grey.shade100,
+                  prefixIcon: Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.business_center, color: Theme.of(context).primaryColor),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
+                style: const TextStyle(fontSize: 14),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'El nombre es obligatorio';
@@ -433,15 +698,41 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               TextFormField(
                 controller: _rucController,
                 enabled: _modoEdicion || _empresaActual == null,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'RUC',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.numbers),
+                  hintText: 'Ej: 12345678901',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: (_modoEdicion || _empresaActual == null) 
+                      ? Colors.grey.shade50 
+                      : Colors.grey.shade100,
+                  prefixIcon: Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.badge, color: Colors.orange),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
+                style: const TextStyle(fontSize: 16),
                 keyboardType: TextInputType.number,
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
@@ -449,29 +740,60 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                 ],
                 validator: _validarRuc,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               DropdownButtonFormField<int>(
                 value: _regimenes.any((r) => r.id == _regimenSeleccionado) 
                        ? _regimenSeleccionado 
                        : null,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Régimen Tributario',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_balance),
+                  hintText: 'Seleccione su régimen',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                  prefixIcon: Container(
+                    margin: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.account_balance, color: Colors.green),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
+                isExpanded: true,
                 items: _regimenes.map((regimen) {
                   return DropdownMenuItem<int>(
                     value: regimen.id,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(regimen.nombre),
-                        Text(
-                          'Renta: ${regimen.tasaRentaFormateada} • IGV: ${regimen.tasaIGVFormateada}',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            regimen.nombre,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                        ],
+                      ),
                     ),
                   );
                 }).toList(),
@@ -489,35 +811,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                 },
               ),
               if (_modoEdicion || _empresaActual == null) ...[
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    if (_modoEdicion) ...[
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            setState(() => _modoEdicion = false);
-                            _cargarDatos();
-                          },
-                          child: const Text('Cancelar'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                    ],
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _cargandoDatos ? null : _guardarPerfil,
-                        child: _cargandoDatos 
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : Text(_empresaActual == null ? 'Crear Perfil' : 'Guardar'),
-                      ),
-                    ),
-                  ],
-                ),
+                const SizedBox(height: 0),
               ],
             ],
           ),
@@ -529,19 +823,101 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       body: _cargandoDatos
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  if (_regimenActual != null && !_modoEdicion && _empresaActual != null)
-                    _buildRegimenInfo(),
-                  _buildFormulario(),
-                  const SizedBox(height: 20),
-                ],
+          ? Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.grey.shade50, Colors.grey.shade100],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: const Center(
+                child: CircularProgressIndicator(strokeWidth: 3),
+              ),
+            )
+          : Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.grey.shade50, Colors.white],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildHeader(),
+                    if (_regimenActual != null && !_modoEdicion && _empresaActual != null)
+                      _buildRegimenInfo(),
+                    _buildFormulario(),
+                    _buildActionButtons(),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    if (!_modoEdicion && _empresaActual != null) return const SizedBox.shrink();
+    
+    return Container(
+      margin: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          if (_modoEdicion) ...[
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _modoEdicion = false;
+                    // Restaurar valores originales
+                    if (_empresaActual != null) {
+                      _nombreController.text = _empresaActual!.nombreRazonSocial;
+                      _rucController.text = _empresaActual!.ruc;
+                      _imagenPerfilPath = _empresaActual!.imagenPerfil;
+                      _regimenSeleccionado = _empresaActual!.regimenId;
+                      _regimenActual = _regimenes.firstWhere(
+                        (r) => r.id == _empresaActual!.regimenId,
+                        orElse: () => _regimenes.first,
+                      );
+                    }
+                  });
+                },
+                icon: const Icon(Icons.cancel_outlined),
+                label: const Text('Cancelar'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+          Expanded(
+            flex: _modoEdicion ? 1 : 2,
+            child: ElevatedButton.icon(
+              onPressed: _guardarPerfil,
+              icon: Icon(_empresaActual == null ? Icons.save : Icons.update),
+              label: Text(_empresaActual == null ? 'Crear Perfil' : 'Guardar Cambios'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 3,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
