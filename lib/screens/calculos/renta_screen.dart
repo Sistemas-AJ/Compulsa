@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/calculo_service.dart';
+import '../../services/regimen_tributario_service.dart';
+import '../../models/regimen_tributario.dart';
+import '../../config/routes.dart';
 
 class RentaScreen extends StatefulWidget {
   const RentaScreen({super.key});
@@ -14,16 +17,41 @@ class _RentaScreenState extends State<RentaScreen> {
   final _gastosController = TextEditingController();
   final _pagosCuentaController = TextEditingController();
   
-  String _regimenSeleccionado = 'General';
+  int? _regimenSeleccionado;
   Map<String, dynamic>? _resultadoCalculo;
   bool _isCalculating = false;
   
-  final List<Map<String, dynamic>> _regimenes = [
-    {'id': 1, 'nombre': 'Régimen General', 'tasa': '29.0%'},
-    {'id': 2, 'nombre': 'Régimen MYPE Tributario', 'tasa': '10.0%'},
-    {'id': 3, 'nombre': 'Régimen Especial de Renta', 'tasa': '1.5%'},
-    {'id': 4, 'nombre': 'Nuevo RUS', 'tasa': '0.0%'},
-  ];
+  List<RegimenTributario> _regimenes = [];
+  bool _cargandoRegimenes = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarRegimenes();
+  }
+
+  Future<void> _cargarRegimenes() async {
+    try {
+      final regimenes = await RegimenTributarioService.getAllRegimenes();
+      setState(() {
+        _regimenes = regimenes;
+        _cargandoRegimenes = false;
+        // Seleccionar el primer régimen por defecto
+        if (_regimenes.isNotEmpty) {
+          _regimenSeleccionado = _regimenes.first.id;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _cargandoRegimenes = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al cargar regímenes: $e')),
+        );
+      }
+    }
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -33,11 +61,43 @@ class _RentaScreenState extends State<RentaScreen> {
         backgroundColor: AppColors.rentaColor,
         foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: _cargandoRegimenes 
+        ? const Center(child: CircularProgressIndicator())
+        : _regimenes.isEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.warning, size: 64, color: Colors.orange),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'No hay regímenes tributarios',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Debe crear al menos un régimen tributario para realizar cálculos',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: () => AppRoutes.navigateTo(context, AppRoutes.regimenes),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Crear Régimen'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
             const Text(
               'Cálculo del Impuesto a la Renta',
               style: TextStyle(
@@ -47,24 +107,26 @@ class _RentaScreenState extends State<RentaScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            DropdownButtonFormField<String>(
-              initialValue: _regimenSeleccionado,
-              decoration: const InputDecoration(
-                labelText: 'Régimen Tributario',
-              ),
-              items: _regimenes.map((regimen) {
-                return DropdownMenuItem<String>(
-                  value: regimen['nombre'],
-                  child: Text('${regimen['nombre']} (${regimen['tasa']})'),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _regimenSeleccionado = newValue!;
-                  _resultadoCalculo = null; // Limpiar resultado anterior
-                });
-              },
-            ),
+            _cargandoRegimenes 
+              ? const Center(child: CircularProgressIndicator())
+              : DropdownButtonFormField<int>(
+                  initialValue: _regimenSeleccionado,
+                  decoration: const InputDecoration(
+                    labelText: 'Régimen Tributario',
+                  ),
+                  items: _regimenes.map((regimen) {
+                    return DropdownMenuItem<int>(
+                      value: regimen.id,
+                      child: Text('${regimen.nombre} (${regimen.tasaRentaFormateada})'),
+                    );
+                  }).toList(),
+                  onChanged: (int? newValue) {
+                    setState(() {
+                      _regimenSeleccionado = newValue!;
+                      _resultadoCalculo = null; // Limpiar resultado anterior
+                    });
+                  },
+                ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _ingresosController,
@@ -143,16 +205,10 @@ class _RentaScreenState extends State<RentaScreen> {
     });
 
     try {
-      // Encontrar el ID del régimen seleccionado
-      final regimen = _regimenes.firstWhere(
-        (r) => r['nombre'] == _regimenSeleccionado,
-        orElse: () => _regimenes[0],
-      );
-
       final resultado = await CalculoService.calcularRenta(
         ingresos: ingresos,
         gastos: gastos,
-        regimenId: regimen['id'],
+        regimenId: _regimenSeleccionado!,
       );
 
       if (!mounted) return;

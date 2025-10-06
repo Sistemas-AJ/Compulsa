@@ -180,6 +180,33 @@ class HomeScreen extends StatelessWidget {
           color: AppColors.rentaColor,
           onTap: () => AppRoutes.navigateTo(context, AppRoutes.reportes),
         ),
+        const SizedBox(height: 24),
+        
+        // Configuración
+        const Text(
+          'Configuración',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        DashboardCard(
+          icon: Icons.account_balance_wallet,
+          title: 'Regímenes Tributarios',
+          subtitle: 'Gestionar regímenes y tasas',
+          color: Colors.indigo,
+          onTap: () => AppRoutes.navigateTo(context, AppRoutes.regimenes),
+        ),
+        const SizedBox(height: 12),
+        DashboardCard(
+          icon: Icons.business,
+          title: 'Empresas',
+          subtitle: 'Gestionar empresas contribuyentes',
+          color: Colors.teal,
+          onTap: () => AppRoutes.navigateTo(context, AppRoutes.empresa),
+        ),
       ],
     );
   }
