@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/calculo_service.dart';
+import '../../services/actividad_reciente_service.dart';
 
 class IgvScreen extends StatefulWidget {
   const IgvScreen({super.key});
@@ -45,6 +46,12 @@ class _IgvScreenState extends State<IgvScreen> {
       );
 
       if (!mounted) return;
+      
+      // Registrar actividad reciente
+      await ActividadRecienteService.registrarCalculoIGV(
+        baseImponible: ventasGravadas,
+        igv: resultado['igvResultante'] ?? 0.0,
+      );
       
       setState(() {
         _resultadoCalculo = resultado;

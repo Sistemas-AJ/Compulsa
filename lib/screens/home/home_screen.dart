@@ -25,7 +25,7 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildMainActionsSection(context),
             const SizedBox(height: 24),
-            _buildRecentActivitySection(),
+            _buildRecentActivitySection(context),
           ],
         ),
       ),
@@ -211,17 +211,27 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentActivitySection() {
+  Widget _buildRecentActivitySection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Actividad Reciente',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Actividad Reciente',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => AppRoutes.navigateTo(context, AppRoutes.actividadReciente),
+              icon: const Icon(Icons.history, size: 18),
+              label: const Text('Ver todo'),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         Card(
@@ -229,25 +239,30 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                _buildActivityItem(
-                  icon: Icons.add_business,
-                  title: 'Empresa registrada',
-                  subtitle: 'ABC Consultores S.A.C.',
-                  time: 'Hace 2 horas',
+                const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Aquí verás tu actividad real una vez que realices cálculos, configuraciones o creaciones.',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ],
                 ),
-                const Divider(),
-                _buildActivityItem(
-                  icon: Icons.calculate,
-                  title: 'Cálculo IGV realizado',
-                  subtitle: 'Periodo: Septiembre 2024',
-                  time: 'Hace 1 día',
-                ),
-                const Divider(),
-                _buildActivityItem(
-                  icon: Icons.file_present,
-                  title: 'Declaración generada',
-                  subtitle: 'PDT 621 - IGV',
-                  time: 'Hace 3 días',
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => AppRoutes.navigateTo(context, AppRoutes.actividadReciente),
+                    icon: const Icon(Icons.history),
+                    label: const Text('Ver Actividad Reciente'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -299,45 +314,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String time,
-  }) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-        child: Icon(
-          icon,
-          color: AppColors.primary,
-          size: 20,
-        ),
-      ),
-      title: Text(
-        title,
-        style: const TextStyle(
-          fontWeight: FontWeight.w500,
-          fontSize: 14,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 12,
-        ),
-      ),
-      trailing: Text(
-        time,
-        style: TextStyle(
-          color: AppColors.textHint,
-          fontSize: 11,
         ),
       ),
     );

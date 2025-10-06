@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import '../models/database_models.dart';
 import '../models/regimen_tributario.dart';
+import '../models/actividad_reciente.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -102,6 +104,19 @@ class DatabaseService {
         fecha_pago TEXT NOT NULL,
         codigo_operacion TEXT,
         FOREIGN KEY (liquidacion_id) REFERENCES Liquidaciones_Mensuales (id)
+      )
+    ''');
+
+    // Crear tabla Actividades_Recientes
+    await db.execute('''
+      CREATE TABLE Actividades_Recientes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        tipo TEXT NOT NULL,
+        descripcion TEXT NOT NULL,
+        datos TEXT NOT NULL,
+        fecha_creacion TEXT NOT NULL,
+        icono TEXT NOT NULL,
+        color TEXT NOT NULL
       )
     ''');
 
@@ -275,6 +290,48 @@ class DatabaseService {
     return List.generate(maps.length, (i) {
       return PagoRealizado.fromJson(maps[i]);
     });
+  }
+
+  // ===== MÉTODOS PARA ACTIVIDADES RECIENTES =====
+  Future<int> insertarActividad(ActividadReciente actividad) async {
+    final db = await database;
+    final data = actividad.toJson();
+    data['datos'] = jsonEncode(data['datos']); // Convertir Map a JSON string
+    return await db.insert('Actividades_Recientes', data);
+  }
+
+  Future<List<ActividadReciente>> obtenerActividadesRecientes({int limite = 10}) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'Actividades_Recientes',
+      orderBy: 'fecha_creacion DESC',
+      limit: limite,
+    );
+    
+    return List.generate(maps.length, (i) {
+      final map = Map<String, dynamic>.from(maps[i]);
+      map['datos'] = jsonDecode(map['datos']); // Convertir JSON string a Map
+      return ActividadReciente.fromJson(map);
+    });
+  }
+
+  Future<void> eliminarActividadReciente(int id) async {
+    final db = await database;
+    await db.delete(
+      'Actividades_Recientes',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> limpiarActividadesAntiguas({int diasMaximos = 30}) async {
+    final db = await database;
+    final fechaLimite = DateTime.now().subtract(Duration(days: diasMaximos));
+    await db.delete(
+      'Actividades_Recientes',
+      where: 'fecha_creacion < ?',
+      whereArgs: [fechaLimite.toIso8601String()],
+    );
   }
 
   // ===== MÉTODOS UTILITARIOS =====

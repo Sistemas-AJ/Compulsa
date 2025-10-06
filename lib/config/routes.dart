@@ -8,6 +8,7 @@ import '../screens/declaraciones/declaracion_form_screen.dart';
 import '../screens/reportes/reportes_screen.dart';
 import '../screens/regimenes/regimenes_screen.dart';
 import '../screens/empresa/perfil_empresa_screen.dart';
+import '../screens/actividad/actividad_reciente_screen.dart';
 
 class AppRoutes {
   // Rutas principales
@@ -20,6 +21,7 @@ class AppRoutes {
   static const String reportes = '/reportes';
   static const String regimenes = '/regimenes';
   static const String empresa = '/empresa';
+  static const String actividadReciente = '/actividad-reciente';
   
   // Mapa de rutas
   static Map<String, WidgetBuilder> get routes {
@@ -33,6 +35,7 @@ class AppRoutes {
       reportes: (context) => const ReportesScreen(),
       regimenes: (context) => const RegimenesScreen(),
       empresa: (context) => const PerfilEmpresaScreen(),
+      actividadReciente: (context) => const ActividadRecienteScreen(),
     };
   }
   

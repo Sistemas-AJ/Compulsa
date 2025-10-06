@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/calculo_service.dart';
 import '../../services/regimen_tributario_service.dart';
+import '../../services/actividad_reciente_service.dart';
 import '../../models/regimen_tributario.dart';
 import '../../config/routes.dart';
 
@@ -14,8 +15,6 @@ class RentaScreen extends StatefulWidget {
 
 class _RentaScreenState extends State<RentaScreen> {
   final _ingresosController = TextEditingController();
-  final _gastosController = TextEditingController();
-  final _pagosCuentaController = TextEditingController();
   
   int? _regimenSeleccionado;
   Map<String, dynamic>? _resultadoCalculo;
@@ -137,26 +136,7 @@ class _RentaScreenState extends State<RentaScreen> {
               ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _gastosController,
-              decoration: const InputDecoration(
-                labelText: 'Gastos Deducibles',
-                hintText: 'Ingrese los gastos deducibles',
-                prefixText: 'S/ ',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _pagosCuentaController,
-              decoration: const InputDecoration(
-                labelText: 'Pagos a Cuenta (Opcional)',
-                hintText: 'Ingrese pagos a cuenta realizados',
-                prefixText: 'S/ ',
-              ),
-              keyboardType: TextInputType.number,
-            ),
+
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -188,7 +168,6 @@ class _RentaScreenState extends State<RentaScreen> {
   
   Future<void> _calcularRenta() async {
     final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
-    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
     
     if (ingresos <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -207,11 +186,19 @@ class _RentaScreenState extends State<RentaScreen> {
     try {
       final resultado = await CalculoService.calcularRenta(
         ingresos: ingresos,
-        gastos: gastos,
+        gastos: 0.0, // Sin gastos deducibles
         regimenId: _regimenSeleccionado!,
       );
 
       if (!mounted) return;
+      
+      // Registrar actividad reciente
+      final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
+      await ActividadRecienteService.registrarCalculoRenta(
+        ingresos: ingresos,
+        impuesto: resultado['impuestoCalculado'] ?? 0.0,
+        regimenNombre: regimenSeleccionado.nombre,
+      );
       
       setState(() {
         _resultadoCalculo = resultado;
@@ -333,8 +320,6 @@ class _RentaScreenState extends State<RentaScreen> {
   @override
   void dispose() {
     _ingresosController.dispose();
-    _gastosController.dispose();
-    _pagosCuentaController.dispose();
     super.dispose();
   }
 }

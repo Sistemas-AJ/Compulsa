@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/regimen_tributario.dart';
 import '../../services/regimen_tributario_service.dart';
+import '../../services/actividad_reciente_service.dart';
 
 class RegimenFormScreen extends StatefulWidget {
   final RegimenTributario? regimen;
@@ -59,6 +60,11 @@ class _RegimenFormScreenState extends State<RegimenFormScreen> {
         await RegimenTributarioService.updateRegimen(regimen);
       } else {
         await RegimenTributarioService.createRegimen(regimen);
+        // Registrar actividad solo para creación
+        await ActividadRecienteService.registrarRegimenCreado(
+          nombre: nombre,
+          tasaRenta: tasaPercent,
+        );
       }
 
       if (mounted) {

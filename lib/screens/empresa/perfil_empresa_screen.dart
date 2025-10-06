@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/database_models.dart';
 import '../../models/regimen_tributario.dart';
 import '../../services/database_service.dart';
+import '../../services/actividad_reciente_service.dart';
 import '../../config/routes.dart';
 
 class PerfilEmpresaScreen extends StatefulWidget {
@@ -132,6 +133,11 @@ class _PerfilEmpresaScreenState extends State<PerfilEmpresaScreen> {
         await _databaseService.actualizarEmpresa(empresa);
       } else {
         await _databaseService.insertarEmpresa(empresa);
+        // Registrar actividad solo para nueva empresa
+        await ActividadRecienteService.registrarEmpresaConfigurada(
+          razonSocial: _nombreController.text.trim(),
+          ruc: _rucController.text.trim(),
+        );
       }
 
       if (mounted) {
