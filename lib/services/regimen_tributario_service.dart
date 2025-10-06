@@ -7,7 +7,7 @@ class RegimenTributarioService {
   static Future<List<RegimenTributario>> getAllRegimenes() async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.regimenesTributarios}/'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.regimenes}/'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -25,7 +25,7 @@ class RegimenTributarioService {
   static Future<RegimenTributario> getRegimenById(int id) async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.regimenesTributarios}/$id'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.regimenes}/$id'),
         headers: {'Content-Type': 'application/json'},
       );
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator, EmailStr
+from pydantic import BaseModel, Field, field_validator, EmailStr
 from typing import Optional
 from datetime import datetime
 import re
@@ -13,7 +13,8 @@ class EmpresaBase(BaseModel):
     regimen_tributario_id: int = Field(..., gt=0, description="ID del régimen tributario")
     activo: bool = Field(True, description="Estado de la empresa")
 
-    @validator('ruc')
+    @field_validator('ruc')
+    @classmethod
     def validate_ruc(cls, v):
         if not v.isdigit():
             raise ValueError('El RUC debe contener solo números')
@@ -26,7 +27,8 @@ class EmpresaBase(BaseModel):
         
         return v
 
-    @validator('telefono')
+    @field_validator('telefono')
+    @classmethod
     def validate_telefono(cls, v):
         if v is not None:
             # Remover espacios y caracteres especiales
@@ -62,7 +64,8 @@ class EmpresaUpdate(BaseModel):
     regimen_tributario_id: Optional[int] = Field(None, gt=0)
     activo: Optional[bool] = None
 
-    @validator('ruc')
+    @field_validator('ruc')
+    @classmethod
     def validate_ruc(cls, v):
         if v is not None:
             if not v.isdigit():

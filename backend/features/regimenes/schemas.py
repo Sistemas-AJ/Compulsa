@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
 
@@ -9,7 +9,8 @@ class RegimenTributarioBase(BaseModel):
     limite_ingresos: Optional[float] = Field(None, ge=0, description="Límite de ingresos anuales")
     activo: bool = Field(True, description="Estado del régimen")
 
-    @validator('tasa_renta')
+    @field_validator('tasa_renta')
+    @classmethod
     def validate_tasa_renta(cls, v):
         if v < 0 or v > 1:
             raise ValueError('La tasa de renta debe estar entre 0 y 1')

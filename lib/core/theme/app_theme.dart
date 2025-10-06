@@ -9,7 +9,6 @@ class AppTheme {
         seedColor: AppColors.primary,
         brightness: Brightness.light,
         surface: AppColors.surface,
-        background: AppColors.background,
       ),
       primaryColor: AppColors.primary,
       scaffoldBackgroundColor: AppColors.background,
@@ -127,7 +126,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: AppColors.accent.withOpacity(0.5)),
+          borderSide: BorderSide(color: AppColors.accent.withValues(alpha: 0.5)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

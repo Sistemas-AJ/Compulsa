@@ -9,7 +9,7 @@ class CalculoService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.calcularIgv}/?ingresos_gravados=$ingresosGravados&igv_compras=$igvCompras'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.calculosIGV}/?ingresos_gravados=$ingresosGravados&igv_compras=$igvCompras'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -30,7 +30,7 @@ class CalculoService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.calcularRenta}/?ingresos=$ingresos&gastos=$gastos&regimen_id=$regimenId'),
+        Uri.parse('${ApiConfig.baseUrl}${ApiConfig.calculosRenta}/?ingresos=$ingresos&gastos=$gastos&regimen_id=$regimenId'),
         headers: {'Content-Type': 'application/json'},
       );
 

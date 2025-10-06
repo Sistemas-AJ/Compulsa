@@ -44,12 +44,14 @@ class _EmpresaFormScreenState extends State<EmpresaFormScreen> {
         }
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error al cargar regímenes: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar regímenes: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

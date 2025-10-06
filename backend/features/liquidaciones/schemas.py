@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
 
 class LiquidacionBase(BaseModel):
     empresa_id: int = Field(..., gt=0, description="ID de la empresa")
-    periodo: str = Field(..., regex=r'^\d{4}-\d{2}$', description="Período en formato YYYY-MM")
+    periodo: str = Field(..., pattern=r'^\d{4}-\d{2}$', description="Período en formato YYYY-MM")
     ingresos_gravados: float = Field(0.0, ge=0, description="Ingresos gravados")
     ingresos_exonerados: float = Field(0.0, ge=0, description="Ingresos exonerados")
     igv_ventas: float = Field(0.0, ge=0, description="IGV por ventas")
@@ -13,7 +13,8 @@ class LiquidacionBase(BaseModel):
     renta_tercera_categoria: float = Field(0.0, ge=0, description="Renta de tercera categoría")
     estado: str = Field("CALCULADO", description="Estado de la liquidación")
 
-    @validator('periodo')
+    @field_validator('periodo')
+    @classmethod
     def validate_periodo(cls, v):
         try:
             year, month = v.split('-')
@@ -25,7 +26,8 @@ class LiquidacionBase(BaseModel):
         except:
             raise ValueError('Período debe tener formato YYYY-MM')
 
-    @validator('estado')
+    @field_validator('estado')
+    @classmethod
     def validate_estado(cls, v):
         estados_validos = ['CALCULADO', 'DECLARADO', 'PAGADO', 'ANULADO']
         if v not in estados_validos:
@@ -59,7 +61,8 @@ class LiquidacionUpdate(BaseModel):
     renta_tercera_categoria: Optional[float] = Field(None, ge=0)
     estado: Optional[str] = None
 
-    @validator('estado')
+    @field_validator('estado')
+    @classmethod
     def validate_estado(cls, v):
         if v is not None:
             estados_validos = ['CALCULADO', 'DECLARADO', 'PAGADO', 'ANULADO']

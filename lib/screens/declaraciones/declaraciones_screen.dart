@@ -89,7 +89,7 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: tipoColor.withOpacity(0.1),
+                    color: tipoColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -105,7 +105,7 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: estadoColor.withOpacity(0.1),
+                    color: estadoColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
