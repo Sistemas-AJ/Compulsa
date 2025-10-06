@@ -17,9 +17,9 @@ class _RentaScreenState extends State<RentaScreen> {
   
   final List<String> _regimenes = ['General', 'MYPE', 'Especial'];
   final Map<String, double> _tasas = {
-    'General': 0.295,
-    'MYPE': 0.10,
-    'Especial': 0.15,
+    'General': 0.015,
+    'MYPE': 0.01,
+    'Especial': 0.015,
   };
   
   @override

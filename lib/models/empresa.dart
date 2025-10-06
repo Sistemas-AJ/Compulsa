@@ -1,117 +1,92 @@
 class Empresa {
-  final String id;
+  final int? id;
   final String ruc;
   final String razonSocial;
-  final RegimenTributario regimen;
-  final bool activo;
-  final DateTime fechaRegistro;
+  final String? nombreComercial;
   final String? direccion;
   final String? telefono;
   final String? email;
+  final int regimenTributarioId;
+  final bool activo;
+  final DateTime? fechaInscripcion;
 
   Empresa({
-    required this.id,
+    this.id,
     required this.ruc,
     required this.razonSocial,
-    required this.regimen,
-    this.activo = true,
-    required this.fechaRegistro,
+    this.nombreComercial,
     this.direccion,
     this.telefono,
     this.email,
+    required this.regimenTributarioId,
+    this.activo = true,
+    this.fechaInscripcion,
   });
 
-  factory Empresa.fromMap(Map<String, dynamic> map) {
+  factory Empresa.fromJson(Map<String, dynamic> json) {
     return Empresa(
-      id: map['id'] ?? '',
-      ruc: map['ruc'] ?? '',
-      razonSocial: map['razonSocial'] ?? '',
-      regimen: RegimenTributario.values.firstWhere(
-        (r) => r.toString().split('.').last == map['regimen'],
-        orElse: () => RegimenTributario.general,
-      ),
-      activo: map['activo'] ?? true,
-      fechaRegistro: DateTime.parse(map['fechaRegistro']),
-      direccion: map['direccion'],
-      telefono: map['telefono'],
-      email: map['email'],
+      id: json['id'],
+      ruc: json['ruc'] ?? '',
+      razonSocial: json['razon_social'] ?? '',
+      nombreComercial: json['nombre_comercial'],
+      direccion: json['direccion'],
+      telefono: json['telefono'],
+      email: json['email'],
+      regimenTributarioId: json['regimen_tributario_id'] ?? 1,
+      activo: json['activo'] ?? true,
+      fechaInscripcion: json['fecha_inscripcion'] != null 
+          ? DateTime.parse(json['fecha_inscripcion']) 
+          : null,
     );
   }
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'ruc': ruc,
-      'razonSocial': razonSocial,
-      'regimen': regimen.toString().split('.').last,
-      'activo': activo,
-      'fechaRegistro': fechaRegistro.toIso8601String(),
+      'razon_social': razonSocial,
+      'nombre_comercial': nombreComercial,
       'direccion': direccion,
       'telefono': telefono,
       'email': email,
+      'regimen_tributario_id': regimenTributarioId,
+      'activo': activo,
+      if (fechaInscripcion != null) 'fecha_inscripcion': fechaInscripcion!.toIso8601String(),
     };
   }
 
+  // Mantener compatibilidad con el código existente
+  factory Empresa.fromMap(Map<String, dynamic> map) {
+    return Empresa.fromJson(map);
+  }
+
+  Map<String, dynamic> toMap() {
+    return toJson();
+  }
+
   Empresa copyWith({
-    String? id,
+    int? id,
     String? ruc,
     String? razonSocial,
-    RegimenTributario? regimen,
-    bool? activo,
-    DateTime? fechaRegistro,
+    String? nombreComercial,
     String? direccion,
     String? telefono,
     String? email,
+    int? regimenTributarioId,
+    bool? activo,
+    DateTime? fechaInscripcion,
   }) {
     return Empresa(
       id: id ?? this.id,
       ruc: ruc ?? this.ruc,
       razonSocial: razonSocial ?? this.razonSocial,
-      regimen: regimen ?? this.regimen,
-      activo: activo ?? this.activo,
-      fechaRegistro: fechaRegistro ?? this.fechaRegistro,
+      nombreComercial: nombreComercial ?? this.nombreComercial,
       direccion: direccion ?? this.direccion,
       telefono: telefono ?? this.telefono,
       email: email ?? this.email,
+      regimenTributarioId: regimenTributarioId ?? this.regimenTributarioId,
+      activo: activo ?? this.activo,
+      fechaInscripcion: fechaInscripcion ?? this.fechaInscripcion,
     );
-  }
-}
-
-enum RegimenTributario {
-  general,
-  mype,
-  especial,
-  rus,
-}
-
-extension RegimenTributarioExtension on RegimenTributario {
-  String get nombre {
-    switch (this) {
-      case RegimenTributario.general:
-        return 'Régimen General';
-      case RegimenTributario.mype:
-        return 'Régimen MYPE';
-      case RegimenTributario.especial:
-        return 'Régimen Especial';
-      case RegimenTributario.rus:
-        return 'RUS';
-    }
-  }
-
-  double get tasaRenta {
-    switch (this) {
-      case RegimenTributario.general:
-        return 0.295; // 29.5%
-      case RegimenTributario.mype:
-        return 0.10; // 10%
-      case RegimenTributario.especial:
-        return 0.15; // 15%
-      case RegimenTributario.rus:
-        return 0.0; // No paga renta
-    }
-  }
-
-  bool get pagaIGV {
-    return this != RegimenTributario.rus;
   }
 }
