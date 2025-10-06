@@ -1,13 +1,12 @@
-class ApiConfig {
-  static const String baseUrl = 'http://127.0.0.1:8001/api/v1'; // Cambiar puerto
+// Configuraciones de la aplicación
+class AppConfig {
+  // Configuración de datos locales
+  static const bool useLocalData = true;
   
-  // Endpoints
-  static const String regimenes = '/regimenes';
-  static const String empresas = '/empresas';
-  static const String calculosIGV = '/calculos/igv';
-  static const String calculosRenta = '/calculos/renta';
-  static const String liquidaciones = '/liquidaciones';
+  // Configuraciones de la aplicación
+  static const String appName = 'Compulsa';
+  static const String appVersion = '1.0.0';
   
-  // Timeout
-  static const Duration timeout = Duration(seconds: 30);
+  // Configuraciones de simulación
+  static const Duration simulatedDelay = Duration(milliseconds: 500);
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/calculo_service.dart';
 
 class RentaScreen extends StatefulWidget {
   const RentaScreen({super.key});
@@ -11,16 +12,18 @@ class RentaScreen extends StatefulWidget {
 class _RentaScreenState extends State<RentaScreen> {
   final _ingresosController = TextEditingController();
   final _gastosController = TextEditingController();
-  String _regimenSeleccionado = 'General';
-  double _rentaNeta = 0.0;
-  double _impuestoRenta = 0.0;
+  final _pagosCuentaController = TextEditingController();
   
-  final List<String> _regimenes = ['General', 'MYPE', 'Especial'];
-  final Map<String, double> _tasas = {
-    'General': 0.015,
-    'MYPE': 0.01,
-    'Especial': 0.015,
-  };
+  String _regimenSeleccionado = 'General';
+  Map<String, dynamic>? _resultadoCalculo;
+  bool _isCalculating = false;
+  
+  final List<Map<String, dynamic>> _regimenes = [
+    {'id': 1, 'nombre': 'Régimen General', 'tasa': '29.0%'},
+    {'id': 2, 'nombre': 'Régimen MYPE Tributario', 'tasa': '10.0%'},
+    {'id': 3, 'nombre': 'Régimen Especial de Renta', 'tasa': '1.5%'},
+    {'id': 4, 'nombre': 'Nuevo RUS', 'tasa': '0.0%'},
+  ];
   
   @override
   Widget build(BuildContext context) {
@@ -49,16 +52,16 @@ class _RentaScreenState extends State<RentaScreen> {
               decoration: const InputDecoration(
                 labelText: 'Régimen Tributario',
               ),
-              items: _regimenes.map((String regimen) {
+              items: _regimenes.map((regimen) {
                 return DropdownMenuItem<String>(
-                  value: regimen,
-                  child: Text('$regimen (${(_tasas[regimen]! * 100).toStringAsFixed(1)}%)'),
+                  value: regimen['nombre'],
+                  child: Text('${regimen['nombre']} (${regimen['tasa']})'),
                 );
               }).toList(),
               onChanged: (String? newValue) {
                 setState(() {
                   _regimenSeleccionado = newValue!;
-                  _calcularRenta();
+                  _resultadoCalculo = null; // Limpiar resultado anterior
                 });
               },
             ),
@@ -71,7 +74,6 @@ class _RentaScreenState extends State<RentaScreen> {
                 prefixText: 'S/ ',
               ),
               keyboardType: TextInputType.number,
-              onChanged: (value) => _calcularRenta(),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -82,46 +84,161 @@ class _RentaScreenState extends State<RentaScreen> {
                 prefixText: 'S/ ',
               ),
               keyboardType: TextInputType.number,
-              onChanged: (value) => _calcularRenta(),
             ),
-            const SizedBox(height: 32),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Resumen del Cálculo',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    _buildCalculoItem('Ingresos', double.tryParse(_ingresosController.text) ?? 0.0),
-                    _buildCalculoItem('Gastos Deducibles', double.tryParse(_gastosController.text) ?? 0.0),
-                    _buildCalculoItem('Renta Neta', _rentaNeta),
-                    const Divider(),
-                    _buildCalculoItem(
-                      'Impuesto a la Renta (${(_tasas[_regimenSeleccionado]! * 100).toStringAsFixed(1)}%)', 
-                      _impuestoRenta, 
-                      isTotal: true
-                    ),
-                  ],
-                ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _pagosCuentaController,
+              decoration: const InputDecoration(
+                labelText: 'Pagos a Cuenta (Opcional)',
+                hintText: 'Ingrese pagos a cuenta realizados',
+                prefixText: 'S/ ',
               ),
+              keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _impuestoRenta > 0 ? _guardarCalculo : null,
+                onPressed: _isCalculating ? null : _calcularRenta,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.rentaColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
-                child: const Text('Guardar Cálculo'),
+                child: _isCalculating
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Calcular Impuesto a la Renta'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            if (_resultadoCalculo != null) _buildResultadoCard(),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Future<void> _calcularRenta() async {
+    final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
+    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
+    
+    if (ingresos <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor ingrese un monto de ingresos válido'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCalculating = true;
+    });
+
+    try {
+      // Encontrar el ID del régimen seleccionado
+      final regimen = _regimenes.firstWhere(
+        (r) => r['nombre'] == _regimenSeleccionado,
+        orElse: () => _regimenes[0],
+      );
+
+      final resultado = await CalculoService.calcularRenta(
+        ingresos: ingresos,
+        gastos: gastos,
+        regimenId: regimen['id'],
+      );
+
+      if (!mounted) return;
+      
+      setState(() {
+        _resultadoCalculo = resultado;
+        _isCalculating = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      
+      setState(() {
+        _isCalculating = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al calcular: $e'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+  
+  Widget _buildResultadoCard() {
+    if (_resultadoCalculo == null) return const SizedBox();
+    
+    final resultado = _resultadoCalculo!;
+    
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Resultado del Cálculo',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            _buildResultadoItem('Ingresos', resultado['ingresos']),
+            _buildResultadoItem('Gastos Deducibles', resultado['gastos']),
+            _buildResultadoItem('Renta Neta', resultado['renta_neta']),
+            const Divider(),
+            _buildResultadoItem(
+              'Impuesto a la Renta (${(resultado['tasa_renta'] * 100).toStringAsFixed(1)}%)', 
+              resultado['impuesto_renta'], 
+              isTotal: true,
+            ),
+            if (resultado['perdida'] > 0)
+              _buildResultadoItem('Pérdida', resultado['perdida'], isError: true),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: resultado['debe_pagar'] 
+                    ? AppColors.rentaColor.withValues(alpha: 0.1)
+                    : AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    resultado['debe_pagar'] ? 'Total a Pagar' : 'Sin Impuesto por Pagar',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: resultado['debe_pagar'] ? AppColors.rentaColor : AppColors.success,
+                    ),
+                  ),
+                  if (resultado['debe_pagar'])
+                    Text(
+                      'S/ ${resultado['renta_por_pagar'].toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.rentaColor,
+                      ),
+                    ),
+                ],
               ),
             ),
           ],
@@ -130,17 +247,7 @@ class _RentaScreenState extends State<RentaScreen> {
     );
   }
   
-  void _calcularRenta() {
-    setState(() {
-      double ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
-      double gastos = double.tryParse(_gastosController.text) ?? 0.0;
-      
-      _rentaNeta = ingresos - gastos;
-      _impuestoRenta = _rentaNeta > 0 ? _rentaNeta * _tasas[_regimenSeleccionado]! : 0.0;
-    });
-  }
-  
-  Widget _buildCalculoItem(String label, double valor, {bool isTotal = false}) {
+  Widget _buildResultadoItem(String label, double valor, {bool isTotal = false, bool isError = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -151,7 +258,7 @@ class _RentaScreenState extends State<RentaScreen> {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isTotal ? AppColors.textPrimary : AppColors.textSecondary,
+              color: isError ? AppColors.error : (isTotal ? AppColors.textPrimary : AppColors.textSecondary),
             ),
           ),
           Text(
@@ -159,20 +266,10 @@ class _RentaScreenState extends State<RentaScreen> {
             style: TextStyle(
               fontSize: isTotal ? 16 : 14,
               fontWeight: FontWeight.bold,
-              color: isTotal ? AppColors.rentaColor : AppColors.textPrimary,
+              color: isError ? AppColors.error : (isTotal ? AppColors.rentaColor : AppColors.textPrimary),
             ),
           ),
         ],
-      ),
-    );
-  }
-  
-  void _guardarCalculo() {
-    // TODO: Guardar cálculo en base de datos
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Cálculo de Renta guardado correctamente'),
-        backgroundColor: AppColors.success,
       ),
     );
   }
@@ -181,6 +278,7 @@ class _RentaScreenState extends State<RentaScreen> {
   void dispose() {
     _ingresosController.dispose();
     _gastosController.dispose();
+    _pagosCuentaController.dispose();
     super.dispose();
   }
 }

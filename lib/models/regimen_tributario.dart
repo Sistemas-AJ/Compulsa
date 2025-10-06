@@ -45,6 +45,38 @@ class RegimenTributario {
     // RUS no paga IGV
     return !nombre.toLowerCase().contains('rus');
   }
+
+  RegimenTributario copyWith({
+    int? id,
+    String? nombre,
+    String? descripcion,
+    double? tasaRenta,
+    double? limiteIngresos,
+    bool? activo,
+  }) {
+    return RegimenTributario(
+      id: id ?? this.id,
+      nombre: nombre ?? this.nombre,
+      descripcion: descripcion ?? this.descripcion,
+      tasaRenta: tasaRenta ?? this.tasaRenta,
+      limiteIngresos: limiteIngresos ?? this.limiteIngresos,
+      activo: activo ?? this.activo,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'RegimenTributario(id: $id, nombre: $nombre, tasaRenta: $tasaRentaFormateada)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is RegimenTributario && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 // Enum para compatibilidad con código existente
