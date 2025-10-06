@@ -30,7 +30,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDatabase,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -147,14 +147,14 @@ class DatabaseService {
         
         await db.insert('Regimenes_Tributarios', {
           'nombre': '(MYPE)',
-          'tasa_renta': 10.0, // 10% sobre renta neta para MYPE
+          'tasa_renta': 1.0, // 1.0% base para MYPE (lógica especial en código)
           'tasa_igv': 18.0, // MYPE paga IGV normal
         });
         print('Insertado: MYPE');
         
         await db.insert('Regimenes_Tributarios', {
           'nombre': '(General)',
-          'tasa_renta': 29.5,
+          'tasa_renta': 1.5, // 1.5% para Régimen General
           'tasa_igv': 18.0, // General paga IGV normal
         });
         print('Insertado: General');
@@ -222,6 +222,52 @@ class DatabaseService {
         print('Columna imagen_perfil agregada correctamente');
       } catch (e) {
         print('Error al agregar columna imagen_perfil: $e');
+      }
+    }
+    
+    if (oldVersion < 6) {
+      // Corregir tasas de renta incorrectas en la versión 6
+      try {
+        print('Corrigiendo tasas de renta incorrectas...');
+        
+        // Corregir tasa de MYPE de 10.0% a 1.0%
+        await db.update('Regimenes_Tributarios', 
+          {'tasa_renta': 1.0}, 
+          where: 'nombre LIKE ?', 
+          whereArgs: ['%MYPE%']
+        );
+        
+        // Corregir tasa de General de 29.5% a 1.5%
+        await db.update('Regimenes_Tributarios', 
+          {'tasa_renta': 1.5}, 
+          where: 'nombre LIKE ?', 
+          whereArgs: ['%General%']
+        );
+        
+        // Verificar que RER tenga 1.0%
+        await db.update('Regimenes_Tributarios', 
+          {'tasa_renta': 1.0}, 
+          where: 'nombre LIKE ?', 
+          whereArgs: ['%RER%']
+        );
+        
+        // Verificar que NRUS tenga 0.0%
+        await db.update('Regimenes_Tributarios', 
+          {'tasa_renta': 0.0}, 
+          where: 'nombre LIKE ?', 
+          whereArgs: ['%NRUS%']
+        );
+        
+        print('Tasas de renta corregidas exitosamente');
+        
+        // Mostrar tasas actualizadas para verificación
+        final regimenes = await db.query('Regimenes_Tributarios');
+        for (var regimen in regimenes) {
+          print('Régimen ${regimen['nombre']}: ${regimen['tasa_renta']}%');
+        }
+        
+      } catch (e) {
+        print('Error al corregir tasas de renta: $e');
       }
     }
   }

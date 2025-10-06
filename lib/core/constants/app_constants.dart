@@ -6,8 +6,8 @@ class AppConstants {
   
   // Tasas tributarias
   static const double tasaIGV = 0.18; // 18%
-  static const double tasaRentaGeneral = 0.295; // 29.5%
-  static const double tasaRentaMYPE = 0.10; // 10%
+  static const double tasaRentaGeneral = 0.01; // 29.5%
+  static const double tasaRentaMYPE = 0.01; // 10%
   static const double tasaRentaEspecial = 0.15; // 15%
   
   // Fechas límite (pueden cambiar anualmente)
