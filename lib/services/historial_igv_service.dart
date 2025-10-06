@@ -245,4 +245,24 @@ class HistorialIGVService {
     
     return null;
   }
+
+  // Obtener las ventas del último cálculo realizado
+  static Future<double> obtenerUltimasVentas() async {
+    await _crearTabla();
+    final dbService = DatabaseService();
+    final db = await dbService.database;
+    
+    final List<Map<String, dynamic>> maps = await db.query(
+      'historial_igv',
+      columns: ['ventasGravadas'],
+      orderBy: 'fechaCalculo DESC',
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return maps.first['ventasGravadas']?.toDouble() ?? 0.0;
+    }
+    
+    return 0.0;
+  }
 }

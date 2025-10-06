@@ -132,28 +132,28 @@ class DatabaseService {
         
         // Insertar regímenes tributarios oficiales del Perú
         await db.insert('Regimenes_Tributarios', {
-          'nombre': 'Nuevo Régimen Único Simplificado (NRUS)',
+          'nombre': '(NRUS)',
           'tasa_renta': 0.0,
           'tasa_igv': 0.0, // NRUS no paga IGV
         });
         print('Insertado: NRUS');
         
         await db.insert('Regimenes_Tributarios', {
-          'nombre': 'Régimen Especial de Impuesto a la Renta (RER)',
-          'tasa_renta': 1.5,
+          'nombre': '(RER)',
+          'tasa_renta': 1.0, // 1.0% sobre ventas netas para RER
           'tasa_igv': 18.0, // RER paga IGV normal
         });
         print('Insertado: RER');
         
         await db.insert('Regimenes_Tributarios', {
-          'nombre': 'Régimen MYPE Tributario',
-          'tasa_renta': 10.0,
+          'nombre': '(MYPE)',
+          'tasa_renta': 10.0, // 10% sobre renta neta para MYPE
           'tasa_igv': 18.0, // MYPE paga IGV normal
         });
         print('Insertado: MYPE');
         
         await db.insert('Regimenes_Tributarios', {
-          'nombre': 'Régimen General',
+          'nombre': '(General)',
           'tasa_renta': 29.5,
           'tasa_igv': 18.0, // General paga IGV normal
         });

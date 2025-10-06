@@ -3,6 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../services/calculo_service.dart';
 import '../../services/database_service.dart';
 import '../../services/actividad_reciente_service.dart';
+import '../../services/historial_igv_service.dart';
 import '../../models/regimen_tributario.dart';
 import '../../widgets/compulsa_appbar.dart';
 
@@ -15,6 +16,7 @@ class RentaScreen extends StatefulWidget {
 
 class _RentaScreenState extends State<RentaScreen> {
   final _ingresosController = TextEditingController();
+  final _gastosController = TextEditingController();
   
   int? _regimenSeleccionado;
   Map<String, dynamic>? _resultadoCalculo;
@@ -27,6 +29,7 @@ class _RentaScreenState extends State<RentaScreen> {
   void initState() {
     super.initState();
     _cargarRegimenes();
+    _cargarUltimasVentas();
   }
 
   Future<void> _cargarRegimenes() async {
@@ -49,6 +52,39 @@ class _RentaScreenState extends State<RentaScreen> {
           SnackBar(content: Text('Error al cargar regímenes: $e')),
         );
       }
+    }
+  }
+
+  // Cargar las ventas del último cálculo de IGV
+  Future<void> _cargarUltimasVentas() async {
+    try {
+      final ultimasVentas = await HistorialIGVService.obtenerUltimasVentas();
+      if (mounted && ultimasVentas > 0) {
+        setState(() {
+          _ingresosController.text = ultimasVentas.toStringAsFixed(2);
+        });
+        
+        // Mostrar un mensaje informativo
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Se cargaron automáticamente las ventas del último cálculo de IGV: S/ ${ultimasVentas.toStringAsFixed(2)}',
+            ),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Limpiar',
+              textColor: Colors.white,
+              onPressed: () {
+                _ingresosController.clear();
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // En caso de error, no hacer nada - el campo queda vacío
+      print('Error al cargar últimas ventas: $e');
     }
   }
   
@@ -115,16 +151,177 @@ class _RentaScreenState extends State<RentaScreen> {
                   },
                 ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _ingresosController,
-              decoration: const InputDecoration(
-                labelText: 'Ingresos del Período',
-                hintText: 'Ingrese los ingresos totales',
-                prefixText: 'S/ ',
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _ingresosController.text.isNotEmpty 
+                      ? AppColors.success.withOpacity(0.5)
+                      : Colors.grey.withOpacity(0.3),
+                ),
               ),
-              keyboardType: TextInputType.number,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_ingresosController.text.isNotEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.success.withOpacity(0.1),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(7)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: AppColors.success,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Datos cargados del último cálculo de IGV',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              setState(() {
+                                _ingresosController.clear();
+                              });
+                            },
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            child: Text(
+                              'Limpiar',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.success,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: 12,
+                      right: 12,
+                      bottom: 12,
+                      top: _ingresosController.text.isNotEmpty ? 8 : 12,
+                    ),
+                    child: TextFormField(
+                      controller: _ingresosController,
+                      decoration: InputDecoration(
+                        labelText: 'Ingresos del Período',
+                        hintText: _ingresosController.text.isEmpty 
+                            ? 'Ingrese los ingresos totales o calculará con ventas de IGV'
+                            : 'Ingrese los ingresos totales',
+                        prefixText: 'S/ ',
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        labelStyle: TextStyle(
+                          color: _ingresosController.text.isNotEmpty 
+                              ? AppColors.success
+                              : Colors.grey[600],
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          // Actualizar la UI cuando cambie el valor
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
-
+            const SizedBox(height: 16),
+            
+            // Campo de gastos deducibles
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.withOpacity(0.3)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: TextFormField(
+                  controller: _gastosController,
+                  decoration: const InputDecoration(
+                    labelText: 'Gastos Deducibles (Opcional)',
+                    hintText: 'Ingrese los gastos deducibles del período',
+                    prefixText: 'S/ ',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                    helperText: 'Gastos permitidos según su régimen tributario',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Botón para cargar ventas de IGV
+            Container(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  try {
+                    final ultimasVentas = await HistorialIGVService.obtenerUltimasVentas();
+                    if (ultimasVentas > 0) {
+                      setState(() {
+                        _ingresosController.text = ultimasVentas.toStringAsFixed(2);
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Ventas cargadas: S/ ${ultimasVentas.toStringAsFixed(2)}',
+                          ),
+                          backgroundColor: AppColors.success,
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('No hay cálculos de IGV registrados'),
+                          backgroundColor: AppColors.warning,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al cargar ventas: $e'),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.download_outlined, size: 18),
+                label: const Text('Cargar Ventas del Último IGV'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -156,6 +353,7 @@ class _RentaScreenState extends State<RentaScreen> {
   
   Future<void> _calcularRenta() async {
     final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
+    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
     
     if (ingresos <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -174,7 +372,7 @@ class _RentaScreenState extends State<RentaScreen> {
     try {
       final resultado = await CalculoService.calcularRenta(
         ingresos: ingresos,
-        gastos: 0.0, // Sin gastos deducibles
+        gastos: gastos,
         regimenId: _regimenSeleccionado!,
       );
 
@@ -229,12 +427,31 @@ class _RentaScreenState extends State<RentaScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildResultadoItem('Ingresos', resultado['ingresos']),
+            _buildResultadoItem('Ingresos (Ventas)', resultado['ingresos']),
             _buildResultadoItem('Gastos Deducibles', resultado['gastos']),
             _buildResultadoItem('Renta Neta', resultado['renta_neta']),
+            if (resultado['base_imponible'] != null && resultado['base_imponible'] != resultado['renta_neta'])
+              _buildResultadoItem('Base Imponible', resultado['base_imponible']),
             const Divider(),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                resultado['tipo_calculo'] ?? 'Cálculo estándar',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 8),
             _buildResultadoItem(
-              'Impuesto a la Renta (${(resultado['tasa_renta'] * 100).toStringAsFixed(1)}%)', 
+              'Impuesto a la Renta (${(resultado['tasa_renta']).toStringAsFixed(1)}%)', 
               resultado['impuesto_renta'], 
               isTotal: true,
             ),
@@ -308,6 +525,7 @@ class _RentaScreenState extends State<RentaScreen> {
   @override
   void dispose() {
     _ingresosController.dispose();
+    _gastosController.dispose();
     super.dispose();
   }
 }

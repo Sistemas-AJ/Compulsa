@@ -140,8 +140,40 @@ class CalculoService {
       throw Exception('Régimen tributario no encontrado');
     }
 
-    final double rentaNeta = ingresos - gastos;
-    final double impuestoRenta = rentaNeta > 0 ? rentaNeta * regimen.tasaRenta : 0.0;
+    double impuestoRenta = 0.0;
+    double rentaNeta = 0.0;
+    double baseImponible = 0.0;
+    String tipoCalculo = '';
+
+    // Determinar el tipo de cálculo según el régimen
+    final nombreRegimen = regimen.nombre.toUpperCase();
+    
+    if (nombreRegimen.contains('NRUS')) {
+      // NRUS: No paga impuesto a la renta
+      baseImponible = ingresos;
+      rentaNeta = ingresos - gastos;
+      impuestoRenta = 0.0;
+      tipoCalculo = 'NRUS - Sin impuesto a la renta';
+    } else if (nombreRegimen.contains('RER')) {
+      // RER: 1.0% sobre ingresos netos (ventas)
+      baseImponible = ingresos;
+      rentaNeta = ingresos - gastos;
+      impuestoRenta = ingresos * (regimen.tasaRenta / 100); // 1.0% sobre ventas
+      tipoCalculo = 'RER - ${regimen.tasaRenta}% sobre ingresos netos';
+    } else if (nombreRegimen.contains('MYPE')) {
+      // MYPE: 10% sobre renta neta (después de gastos)
+      rentaNeta = ingresos - gastos;
+      baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
+      impuestoRenta = rentaNeta > 0 ? rentaNeta * (regimen.tasaRenta / 100) : 0.0;
+      tipoCalculo = 'MYPE - ${regimen.tasaRenta}% sobre renta neta';
+    } else {
+      // Régimen General: 29.5% sobre renta neta
+      rentaNeta = ingresos - gastos;
+      baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
+      impuestoRenta = rentaNeta > 0 ? rentaNeta * (regimen.tasaRenta / 100) : 0.0;
+      tipoCalculo = 'General - ${regimen.tasaRenta}% sobre renta neta';
+    }
+
     final double rentaPorPagar = impuestoRenta > 0 ? impuestoRenta : 0.0;
     final double perdida = rentaNeta < 0 ? rentaNeta.abs() : 0.0;
 
@@ -149,11 +181,13 @@ class CalculoService {
       'ingresos': ingresos,
       'gastos': gastos,
       'renta_neta': rentaNeta,
+      'base_imponible': baseImponible,
       'impuesto_renta': impuestoRenta,
       'renta_por_pagar': rentaPorPagar,
       'perdida': perdida,
       'tasa_renta': regimen.tasaRenta,
       'regimen_nombre': regimen.nombre,
+      'tipo_calculo': tipoCalculo,
       'fecha_calculo': DateTime.now().toIso8601String(),
       'tiene_perdida': rentaNeta < 0,
       'debe_pagar': rentaPorPagar > 0,
