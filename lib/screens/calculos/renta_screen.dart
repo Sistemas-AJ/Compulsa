@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/format_utils.dart';
-import '../../core/utils/input_formatters.dart';
 import '../../services/calculo_service.dart';
 import '../../services/database_service.dart';
 import '../../services/actividad_reciente_service.dart';
@@ -71,8 +70,8 @@ class _RentaScreenState extends State<RentaScreen> {
 
   // Función para calcular coeficiente automáticamente
   void _calcularCoeficienteAutomatico() {
-    final impuesto2023 = double.tryParse(FormatUtils.limpiarFormatoNumero(_impuesto2023Controller.text)) ?? 0.0;
-    final ingresos2023 = double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresos2023Controller.text)) ?? 0.0;
+    final impuesto2023 = double.tryParse(_impuesto2023Controller.text) ?? 0.0;
+    final ingresos2023 = double.tryParse(_ingresos2023Controller.text) ?? 0.0;
     
     if (impuesto2023 > 0 && ingresos2023 > 0) {
       final coeficiente = impuesto2023 / ingresos2023;
@@ -85,8 +84,8 @@ class _RentaScreenState extends State<RentaScreen> {
       // Recalcular las opciones MYPE con el nuevo coeficiente
       if (_opcionesMyPE != null) {
         final nuevasOpciones = RegimenTributario.calcularTasaMyPE(
-          ingresos: double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresosController.text)) ?? 0.0,
-          gastosDeducibles: double.tryParse(FormatUtils.limpiarFormatoNumero(_gastosController.text)) ?? 0.0,
+          ingresos: double.tryParse(_ingresosController.text) ?? 0.0,
+          gastosDeducibles: double.tryParse(_gastosController.text) ?? 0.0,
           coeficientePersonalizado: coeficiente,
         );
         setState(() {
@@ -293,9 +292,6 @@ class _RentaScreenState extends State<RentaScreen> {
                         ),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [
-                        MoneyInputFormatter(decimales: 2, valorMaximo: 999999999999.99),
-                      ],
                       onChanged: (value) {
                         setState(() {
                           // Actualizar la UI cuando cambie el valor
@@ -381,8 +377,8 @@ class _RentaScreenState extends State<RentaScreen> {
   void _verificarOpcionesMYPE() {
     if (_regimenSeleccionado == null) return;
     
-    final ingresos = double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresosController.text)) ?? 0.0;
-    final gastos = double.tryParse(FormatUtils.limpiarFormatoNumero(_gastosController.text)) ?? 0.0;
+    final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
+    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
     
     // Obtener el régimen seleccionado
     final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
@@ -415,8 +411,8 @@ class _RentaScreenState extends State<RentaScreen> {
   }
   
   Future<void> _calcularRenta() async {
-    final ingresos = double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresosController.text)) ?? 0.0;
-    final gastos = double.tryParse(FormatUtils.limpiarFormatoNumero(_gastosController.text)) ?? 0.0;
+    final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
+    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
     
     if (ingresos <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1085,9 +1081,6 @@ class _RentaScreenState extends State<RentaScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        inputFormatters: [
-                          MoneyInputFormatter(decimales: 2, valorMaximo: 999999999999.99),
-                        ],
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -1126,9 +1119,6 @@ class _RentaScreenState extends State<RentaScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
-                        inputFormatters: [
-                          MoneyInputFormatter(decimales: 2, valorMaximo: 999999999999.99),
-                        ],
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

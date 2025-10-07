@@ -1,14 +1,11 @@
 import 'package:flutter/services.dart';
-import 'format_utils.dart';
 
-/// Formateador de entrada para números con separadores de miles
+/// Formateador básico que solo valida formato de número pero no interfiere
 class NumberInputFormatter extends TextInputFormatter {
   final int decimales;
-  final double? valorMaximo;
 
   NumberInputFormatter({
     this.decimales = 2,
-    this.valorMaximo,
   });
 
   @override
@@ -16,57 +13,43 @@ class NumberInputFormatter extends TextInputFormatter {
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    // Si el texto está vacío, permitir
+    // Permitir texto vacío
     if (newValue.text.isEmpty) {
       return newValue;
     }
 
-    // Limpiar el texto de cualquier formato previo
-    String textoLimpio = FormatUtils.limpiarFormatoNumero(newValue.text);
-
-    // Validar que solo contenga números y punto decimal
-    if (!RegExp(r'^\d*\.?\d*$').hasMatch(textoLimpio)) {
+    // Solo validaciones muy básicas
+    String texto = newValue.text;
+    
+    // Permitir números, comas y un punto decimal
+    if (!RegExp(r'^[\d,]*\.?\d*$').hasMatch(texto)) {
       return oldValue;
     }
 
-    // Convertir a double y validar límite máximo
-    double? valor = double.tryParse(textoLimpio);
-    if (valor != null && valorMaximo != null && valor > valorMaximo!) {
+    // Validar máximo un punto decimal
+    int puntos = texto.split('.').length - 1;
+    if (puntos > 1) {
       return oldValue;
     }
 
-    // Formatear el número
-    String textoFormateado = FormatUtils.formatearNumeroConSeparadores(
-      textoLimpio,
-      decimales: decimales,
-    );
-
-    // Calcular nueva posición del cursor
-    int nuevaPosicion = textoFormateado.length;
-    
-    // Ajustar posición del cursor considerando los separadores agregados
-    int separadoresAgregados = textoFormateado.split(',').length - 1;
-    int separadoresOriginales = oldValue.text.split(',').length - 1;
-    int diferenciaSeparadores = separadoresAgregados - separadoresOriginales;
-    
-    if (newValue.selection.baseOffset != newValue.text.length) {
-      nuevaPosicion = newValue.selection.baseOffset + diferenciaSeparadores;
-      nuevaPosicion = nuevaPosicion.clamp(0, textoFormateado.length);
+    // Si hay punto decimal, validar decimales
+    if (texto.contains('.')) {
+      String parteDecimal = texto.split('.')[1];
+      if (parteDecimal.length > decimales) {
+        return oldValue;
+      }
     }
 
-    return TextEditingValue(
-      text: textoFormateado,
-      selection: TextSelection.collapsed(offset: nuevaPosicion),
-    );
+    // Devolver el texto tal como está, sin modificaciones
+    return newValue;
   }
 }
 
 /// Formateador específico para montos en soles peruanos
 class MoneyInputFormatter extends NumberInputFormatter {
-  MoneyInputFormatter({int decimales = 2, double? valorMaximo})
+  MoneyInputFormatter({int decimales = 2})
       : super(
           decimales: decimales,
-          valorMaximo: valorMaximo ?? 999999999999.99, // Límite por defecto
         );
 }
 
