@@ -96,28 +96,40 @@ class RegimenTributario {
 
     // Usar coeficiente personalizado si se proporciona
     double coeficienteAUsar = coeficientePersonalizado ?? coeficienteAuto;
-    double tasaCoeficiente = coeficienteAUsar * 100;
-
-    // Si el coeficiente es menor a 1.5%, puede elegir
-    if (tasaCoeficiente < tasaMyeElevada) {
+    
+    // ✨ NUEVA LÓGICA: Siempre usar el menor entre coeficiente y 1.5%
+    const double tasaMaxima = 0.015; // 1.5%
+    
+    // Si no se proporciona coeficiente, usar automáticamente 1.5%
+    if (coeficientePersonalizado == null) {
       return {
-        'tasa': tasaMyeElevada / 100, // 1.5% (opción recomendada)
-        'tasaAlternativa': coeficienteAUsar, // Coeficiente como alternativa
-        'tipo': 'opcional',
-        'descripcion': 'Puede elegir: 1.5% fijo o coeficiente ${(coeficienteAUsar * 100).toStringAsFixed(2)}%',
+        'tasa': tasaMaxima, // 1.5% por defecto
+        'tipo': 'automatico',
+        'descripcion': 'Tasa automática 1.5% (sin coeficiente personalizado)',
+        'base': ingresos,
+        'coeficiente': coeficienteAuto,
+        'coeficientePersonalizado': false,
+      };
+    }
+
+    // Con coeficiente personalizado: aplicar lógica de comparación
+    if (coeficienteAUsar < tasaMaxima) {
+      return {
+        'tasa': coeficienteAUsar, // Usar coeficiente (es menor)
+        'tipo': 'coeficiente_menor',
+        'descripcion': 'Coeficiente ${(coeficienteAUsar * 100).toStringAsFixed(2)}% aplicado (menor a 1.5%)',
         'base': ingresos,
         'coeficiente': coeficienteAUsar,
-        'coeficientePersonalizado': coeficientePersonalizado != null,
+        'coeficientePersonalizado': true,
       };
     } else {
-      // Si el coeficiente es mayor o igual a 1.5%, debe usar el coeficiente
       return {
-        'tasa': coeficienteAUsar,
-        'tipo': 'obligatorio_coeficiente',
-        'descripcion': 'Coeficiente obligatorio ${(coeficienteAUsar * 100).toStringAsFixed(2)}% (≥ 1.5%)',
+        'tasa': tasaMaxima, // Usar 1.5% (coeficiente es mayor o igual)
+        'tipo': 'limitado_maximo',
+        'descripcion': 'Tasa limitada a 1.5% (coeficiente ${(coeficienteAUsar * 100).toStringAsFixed(2)}% >= 1.5%)',
         'base': ingresos,
         'coeficiente': coeficienteAUsar,
-        'coeficientePersonalizado': coeficientePersonalizado != null,
+        'coeficientePersonalizado': true,
       };
     }
   }

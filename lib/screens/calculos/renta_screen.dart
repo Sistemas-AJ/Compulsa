@@ -146,7 +146,7 @@ class _RentaScreenState extends State<RentaScreen> {
                   items: _regimenes.map((regimen) {
                     return DropdownMenuItem<int>(
                       value: regimen.id,
-                      child: Text('${regimen.nombre} (${regimen.tasaRentaFormateada})'),
+                      child: Text(_obtenerTextoRegimen(regimen)),
                     );
                   }).toList(),
                   onChanged: (int? newValue) {
@@ -154,9 +154,17 @@ class _RentaScreenState extends State<RentaScreen> {
                       _regimenSeleccionado = newValue!;
                       _resultadoCalculo = null; // Limpiar resultado anterior
                     });
+                    _verificarOpcionesMYPE(); // Verificar opciones MYPE al cambiar régimen
                   },
                 ),
             const SizedBox(height: 16),
+            
+            // Indicador de tasa MYPE cuando aplique
+            if (_mostrarOpcionesMyPE && _opcionesMyPE != null)
+              _buildIndicadorTasaMYPE(),
+            
+            if (_mostrarOpcionesMyPE && _opcionesMyPE != null)
+              const SizedBox(height: 16),
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
@@ -248,6 +256,7 @@ class _RentaScreenState extends State<RentaScreen> {
                         setState(() {
                           // Actualizar la UI cuando cambie el valor
                         });
+                        _verificarOpcionesMYPE();
                       },
                     ),
                   ),
@@ -263,79 +272,7 @@ class _RentaScreenState extends State<RentaScreen> {
             if (_mostrarOpcionesMyPE && _regimenSeleccionado != null)
               const SizedBox(height: 16),
             
-            // Campo de gastos deducibles
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: TextFormField(
-                  controller: _gastosController,
-                  decoration: const InputDecoration(
-                    labelText: 'Gastos Deducibles (Opcional)',
-                    hintText: 'Ingrese los gastos deducibles del período',
-                    prefixText: 'S/ ',
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    helperText: 'Gastos permitidos según su régimen tributario',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Botón para cargar ventas de IGV
-            Container(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  try {
-                    final ultimasVentas = await HistorialIGVService.obtenerUltimasVentas();
-                    if (ultimasVentas > 0) {
-                      setState(() {
-                        _ingresosController.text = ultimasVentas.toStringAsFixed(2);
-                      });
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Ventas cargadas: S/ ${ultimasVentas.toStringAsFixed(2)}',
-                          ),
-                          backgroundColor: AppColors.success,
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('No hay cálculos de IGV registrados'),
-                          backgroundColor: AppColors.warning,
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al cargar ventas: $e'),
-                        backgroundColor: AppColors.error,
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.download_outlined, size: 18),
-                label: const Text('Cargar Ventas del Último IGV'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -364,6 +301,75 @@ class _RentaScreenState extends State<RentaScreen> {
     );
   }
   
+  // Método para obtener el texto dinámico del régimen en el dropdown
+  String _obtenerTextoRegimen(RegimenTributario regimen) {
+    // Si es MYPE y hay opciones calculadas, mostrar la tasa dinámica
+    if (regimen.nombre.toUpperCase().contains('MYPE') && _opcionesMyPE != null) {
+      final tasaActual = (_opcionesMyPE!['tasa'] * 100).toStringAsFixed(1);
+      final tipoCalculo = _opcionesMyPE!['tipo'];
+      
+      String descripcionTasa;
+      switch (tipoCalculo) {
+        case 'basica':
+          descripcionTasa = '1.0% - Básica';
+          break;
+        case 'automatico':
+          descripcionTasa = '1.5% - Automático';
+          break;
+        case 'coeficiente_menor':
+          descripcionTasa = '${tasaActual}% - Coeficiente';
+          break;
+        case 'limitado_maximo':
+          descripcionTasa = '1.5% - Limitado';
+          break;
+        default:
+          descripcionTasa = '${tasaActual}%';
+      }
+      
+      return '${regimen.nombre} (${descripcionTasa})';
+    }
+    
+    // Para otros regímenes o cuando no hay opciones MYPE, mostrar tasa fija
+    return '${regimen.nombre} (${regimen.tasaRentaFormateada})';
+  }
+  
+  // Método para verificar automáticamente si se deben mostrar opciones MYPE
+  void _verificarOpcionesMYPE() {
+    if (_regimenSeleccionado == null) return;
+    
+    final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
+    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
+    
+    // Obtener el régimen seleccionado
+    final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
+    
+    // Solo procesar si es MYPE y los ingresos superan el límite
+    if (regimenSeleccionado.nombre.toUpperCase().contains('MYPE') && ingresos > RegimenTributario.limiteMyeBasico) {
+      // Calcular opciones de MYPE automáticamente
+      final opciones = RegimenTributario.calcularTasaMyPE(
+        ingresos: ingresos,
+        gastosDeducibles: gastos,
+        coeficientePersonalizado: double.tryParse(_coeficienteController.text),
+      );
+      
+      setState(() {
+        _opcionesMyPE = opciones;
+        _mostrarOpcionesMyPE = true;
+        // ✨ Aplicar automáticamente la lógica: si hay coeficiente personalizado, usarlo
+        _usarCoeficiente = opciones['coeficientePersonalizado'] == true;
+        // El dropdown se actualizará automáticamente gracias a _obtenerTextoRegimen
+      });
+    } else {
+      // Si no es MYPE o no supera el límite, ocultar opciones
+      setState(() {
+        _mostrarOpcionesMyPE = false;
+        _opcionesMyPE = null;
+        _usarCoeficiente = false;
+        // El dropdown volverá a mostrar la tasa fija del régimen
+      });
+    }
+  }
+  
   Future<void> _calcularRenta() async {
     final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
     final gastos = double.tryParse(_gastosController.text) ?? 0.0;
@@ -378,27 +384,8 @@ class _RentaScreenState extends State<RentaScreen> {
       return;
     }
 
-    // Verificar si es MYPE y mostrar opciones si aplica
+    // Las opciones MYPE ya se calculan automáticamente en _verificarOpcionesMYPE()
     final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
-    if (regimenSeleccionado.nombre.toUpperCase().contains('MYPE') && ingresos > RegimenTributario.limiteMyeBasico) {
-      // Calcular opciones de MYPE
-      final opciones = RegimenTributario.calcularTasaMyPE(
-        ingresos: ingresos,
-        gastosDeducibles: gastos,
-        coeficientePersonalizado: double.tryParse(_coeficienteController.text),
-      );
-      
-      setState(() {
-        _opcionesMyPE = opciones;
-        _mostrarOpcionesMyPE = true;
-      });
-
-      // Si es opcional, mostrar diálogo para elegir
-      if (opciones['tipo'] == 'opcional') {
-        await _mostrarDialogoOpcionesMYPE(opciones);
-        return;
-      }
-    }
 
     setState(() {
       _isCalculating = true;
@@ -558,6 +545,118 @@ class _RentaScreenState extends State<RentaScreen> {
     );
   }
   
+  Widget _buildIndicadorTasaMYPE() {
+    if (_opcionesMyPE == null) return const SizedBox();
+    
+    final tasa = (_opcionesMyPE!['tasa'] * 100).toStringAsFixed(1);
+    final tipo = _opcionesMyPE!['tipo'];
+    final descripcion = _opcionesMyPE!['descripcion'];
+    
+    Color colorFondo;
+    Color colorTexto;
+    IconData icono;
+    String titulo;
+    
+    switch (tipo) {
+      case 'basica':
+        colorFondo = Colors.blue;
+        colorTexto = Colors.blue;
+        icono = Icons.trending_down;
+        titulo = 'Tasa Básica MYPE';
+        break;
+      case 'automatico':
+        colorFondo = Colors.orange;
+        colorTexto = Colors.orange;
+        icono = Icons.auto_mode;
+        titulo = 'Tasa Automática MYPE';
+        break;
+      case 'coeficiente_menor':
+        colorFondo = Colors.green;
+        colorTexto = Colors.green;
+        icono = Icons.calculate;
+        titulo = 'Coeficiente Aplicado';
+        break;
+      case 'limitado_maximo':
+        colorFondo = AppColors.warning;
+        colorTexto = AppColors.warning;
+        icono = Icons.shield;
+        titulo = 'Tasa Limitada';
+        break;
+      default:
+        colorFondo = Colors.grey;
+        colorTexto = Colors.grey;
+        icono = Icons.info;
+        titulo = 'Tasa MYPE';
+    }
+    
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorFondo.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colorFondo.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: colorFondo.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(
+                  icono,
+                  size: 18,
+                  color: colorTexto,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  titulo,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: colorTexto,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: colorFondo,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${tasa}%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            descripcion,
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[600],
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+  
   Widget _buildCampoCoeficiente() {
     if (_opcionesMyPE == null) return const SizedBox();
     
@@ -667,7 +766,11 @@ class _RentaScreenState extends State<RentaScreen> {
                     );
                     setState(() {
                       _opcionesMyPE = nuevasOpciones;
+                      _usarCoeficiente = true; // Activar automáticamente el uso del coeficiente
                     });
+                  } else {
+                    // Si no hay coeficiente válido, recalcular opciones
+                    _verificarOpcionesMYPE();
                   }
                 },
               ),
@@ -678,6 +781,7 @@ class _RentaScreenState extends State<RentaScreen> {
     );
   }
 
+  // ignore: unused_element
   Future<void> _mostrarDialogoOpcionesMYPE(Map<String, dynamic> opciones) async {
     return showDialog<void>(
       context: context,
