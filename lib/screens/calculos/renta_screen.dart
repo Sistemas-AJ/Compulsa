@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/format_utils.dart';
+import '../../core/utils/input_formatters.dart';
 import '../../services/calculo_service.dart';
 import '../../services/database_service.dart';
 import '../../services/actividad_reciente_service.dart';
@@ -68,8 +71,8 @@ class _RentaScreenState extends State<RentaScreen> {
 
   // Función para calcular coeficiente automáticamente
   void _calcularCoeficienteAutomatico() {
-    final impuesto2023 = double.tryParse(_impuesto2023Controller.text) ?? 0.0;
-    final ingresos2023 = double.tryParse(_ingresos2023Controller.text) ?? 0.0;
+    final impuesto2023 = double.tryParse(FormatUtils.limpiarFormatoNumero(_impuesto2023Controller.text)) ?? 0.0;
+    final ingresos2023 = double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresos2023Controller.text)) ?? 0.0;
     
     if (impuesto2023 > 0 && ingresos2023 > 0) {
       final coeficiente = impuesto2023 / ingresos2023;
@@ -82,8 +85,8 @@ class _RentaScreenState extends State<RentaScreen> {
       // Recalcular las opciones MYPE con el nuevo coeficiente
       if (_opcionesMyPE != null) {
         final nuevasOpciones = RegimenTributario.calcularTasaMyPE(
-          ingresos: double.tryParse(_ingresosController.text) ?? 0.0,
-          gastosDeducibles: double.tryParse(_gastosController.text) ?? 0.0,
+          ingresos: double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresosController.text)) ?? 0.0,
+          gastosDeducibles: double.tryParse(FormatUtils.limpiarFormatoNumero(_gastosController.text)) ?? 0.0,
           coeficientePersonalizado: coeficiente,
         );
         setState(() {
@@ -289,7 +292,10 @@ class _RentaScreenState extends State<RentaScreen> {
                               : Colors.grey[600],
                         ),
                       ),
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        MoneyInputFormatter(decimales: 2, valorMaximo: 999999999999.99),
+                      ],
                       onChanged: (value) {
                         setState(() {
                           // Actualizar la UI cuando cambie el valor
@@ -375,8 +381,8 @@ class _RentaScreenState extends State<RentaScreen> {
   void _verificarOpcionesMYPE() {
     if (_regimenSeleccionado == null) return;
     
-    final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
-    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
+    final ingresos = double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresosController.text)) ?? 0.0;
+    final gastos = double.tryParse(FormatUtils.limpiarFormatoNumero(_gastosController.text)) ?? 0.0;
     
     // Obtener el régimen seleccionado
     final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
@@ -409,8 +415,8 @@ class _RentaScreenState extends State<RentaScreen> {
   }
   
   Future<void> _calcularRenta() async {
-    final ingresos = double.tryParse(_ingresosController.text) ?? 0.0;
-    final gastos = double.tryParse(_gastosController.text) ?? 0.0;
+    final ingresos = double.tryParse(FormatUtils.limpiarFormatoNumero(_ingresosController.text)) ?? 0.0;
+    final gastos = double.tryParse(FormatUtils.limpiarFormatoNumero(_gastosController.text)) ?? 0.0;
     
     if (ingresos <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -539,12 +545,18 @@ class _RentaScreenState extends State<RentaScreen> {
                     ),
                   ),
                   if (resultado['debe_pagar'])
-                    Text(
-                      'S/ ${resultado['renta_por_pagar'].toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.rentaColor,
+                    Container(
+                      constraints: const BoxConstraints(maxWidth: 300),
+                      child: Text(
+                        FormatUtils.formatearMoneda(resultado['renta_por_pagar']),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.rentaColor,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
                       ),
                     ),
                 ],
@@ -562,20 +574,28 @@ class _RentaScreenState extends State<RentaScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              color: isError ? AppColors.error : (isTotal ? AppColors.textPrimary : AppColors.textSecondary),
+          Expanded(
+            flex: 3,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: isTotal ? 16 : 14,
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                color: isError ? AppColors.error : (isTotal ? AppColors.textPrimary : AppColors.textSecondary),
+              ),
             ),
           ),
-          Text(
-            'S/ ${valor.toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: isTotal ? 16 : 14,
-              fontWeight: FontWeight.bold,
-              color: isError ? AppColors.error : (isTotal ? AppColors.rentaColor : AppColors.textPrimary),
+          Expanded(
+            flex: 2,
+            child: Text(
+              FormatUtils.formatearMoneda(valor),
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: isTotal ? 16 : 14,
+                fontWeight: FontWeight.bold,
+                color: isError ? AppColors.error : (isTotal ? AppColors.rentaColor : AppColors.textPrimary),
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -1042,7 +1062,7 @@ class _RentaScreenState extends State<RentaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Impuesto Calculado año 2023',
+                        'Impuesto Calculado del año pasado',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1065,6 +1085,9 @@ class _RentaScreenState extends State<RentaScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
+                        inputFormatters: [
+                          MoneyInputFormatter(decimales: 2, valorMaximo: 999999999999.99),
+                        ],
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -1080,7 +1103,7 @@ class _RentaScreenState extends State<RentaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Ingresos Netos año 2023',
+                        'Ingresos Netos del año pasado',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -1103,6 +1126,9 @@ class _RentaScreenState extends State<RentaScreen> {
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
+                        inputFormatters: [
+                          MoneyInputFormatter(decimales: 2, valorMaximo: 999999999999.99),
+                        ],
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

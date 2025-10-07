@@ -17,6 +17,9 @@ class ReportesScreen extends StatefulWidget {
 }
 
 class _ReportesScreenState extends State<ReportesScreen> {
+  // ===========================================================================
+  // State Variables & Lifecycle
+  // ===========================================================================
   List<HistorialIGV> _historialIGV = [];
   List<HistorialRenta> _historialRenta = [];
   Map<String, dynamic>? _resumenIGV;
@@ -29,36 +32,9 @@ class _ReportesScreenState extends State<ReportesScreen> {
     _cargarDatos();
   }
 
-  Future<void> _cargarDatos() async {
-    try {
-      // Cargar datos de IGV
-      final historialIGV = await HistorialIGVService.obtenerTodosLosCalculos();
-      final resumenIGV = await HistorialIGVService.obtenerResumenReciente();
-
-      // Cargar datos de Renta
-      final historialRenta = await HistorialRentaService.obtenerHistorial();
-      final estadisticasRenta =
-          await HistorialRentaService.obtenerEstadisticas();
-
-      if (mounted) {
-        setState(() {
-          _historialIGV = historialIGV;
-          _historialRenta = historialRenta;
-          _resumenIGV = resumenIGV;
-          _resumenRenta = estadisticasRenta;
-          _cargandoDatos = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _cargandoDatos = false;
-        });
-      }
-      print('Error al cargar datos del historial: $e');
-    }
-  }
-
+  // ===========================================================================
+  // Main Build Method
+  // ===========================================================================
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,7 +53,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            _buildResumenMensual(),
+            _buildAnalysisSection(),
             const SizedBox(height: 24),
             const Text(
               'Reportes Disponibles',
@@ -88,76 +64,32 @@ class _ReportesScreenState extends State<ReportesScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            DashboardCard(
-              icon: Icons.pie_chart,
-              title: 'Resumen General',
-              subtitle: 'IGV y Renta por empresa',
-              color: AppColors.primary,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        const EstadisticasEmpresarialesScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            DashboardCard(
-              icon: Icons.trending_up,
-              title: 'Evolución Mensual',
-              subtitle: 'Tendencia de impuestos',
-              color: AppColors.secondary,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const EvolucionMensualScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            DashboardCard(
-              icon: Icons.account_balance,
-              title: 'Historial de Cálculos IGV',
-              subtitle: 'Registro de todos los cálculos de IGV realizados',
-              color: AppColors.saldoFavorColor,
-              onTap: () {
-                _mostrarHistorialIGV();
-              },
-            ),
-            const SizedBox(height: 12),
-            DashboardCard(
-              icon: Icons.assignment,
-              title: 'Historial de Cálculos Renta',
-              subtitle: 'Registro de todos los cálculos de Renta realizados',
-              color: AppColors.igvColor,
-              onTap: () {
-                _mostrarHistorialRenta();
-              },
-            ),
+            _buildReportsSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildResumenMensual() {
+  // ===========================================================================
+  // UI Section Builders
+  // ===========================================================================
+  
+  /// Builds the summary card for IGV analysis or a loading indicator.
+  Widget _buildAnalysisSection() {
     if (_cargandoDatos) {
-      return Card(
+      return const Card(
         child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              Text(
-                'Cargando datos...',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
+          padding: EdgeInsets.all(16.0),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Cargando datos...'),
+              ],
+            ),
           ),
         ),
       );
@@ -190,9 +122,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
                   child: _buildMetricCard(
                     'Saldo a Favor Actual',
                     'S/ ${ultimoSaldo.toStringAsFixed(2)}',
-                    ultimoSaldo > 0
-                        ? AppColors.saldoFavorColor
-                        : AppColors.igvColor,
+                    ultimoSaldo > 0 ? AppColors.saldoFavorColor : AppColors.igvColor,
                     Icons.account_balance_wallet,
                   ),
                 ),
@@ -234,19 +164,63 @@ class _ReportesScreenState extends State<ReportesScreen> {
       ),
     );
   }
+  
+  /// Builds the list of available report cards.
+  Widget _buildReportsSection() {
+    return Column(
+      children: [
+        DashboardCard(
+          icon: Icons.pie_chart,
+          title: 'Resumen General',
+          subtitle: 'IGV y Renta por empresa',
+          color: AppColors.primary,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EstadisticasEmpresarialesScreen()),
+          ),
+        ),
+        const SizedBox(height: 12),
+        DashboardCard(
+          icon: Icons.trending_up,
+          title: 'Evolución Mensual',
+          subtitle: 'Tendencia de impuestos',
+          color: AppColors.secondary,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const EvolucionMensualScreen()),
+          ),
+        ),
+        const SizedBox(height: 12),
+        DashboardCard(
+          icon: Icons.account_balance,
+          title: 'Historial de Cálculos IGV',
+          subtitle: 'Registro de todos los cálculos de IGV realizados',
+          color: AppColors.saldoFavorColor,
+          onTap: () => _handleShowHistoryIGV(),
+        ),
+        const SizedBox(height: 12),
+        DashboardCard(
+          icon: Icons.assignment,
+          title: 'Historial de Cálculos Renta',
+          subtitle: 'Registro de todos los cálculos de Renta realizados',
+          color: AppColors.igvColor,
+          onTap: () => _handleShowHistoryRenta(),
+        ),
+      ],
+    );
+  }
 
-  Widget _buildMetricCard(
-    String titulo,
-    String valor,
-    Color color,
-    IconData icono,
-  ) {
+  // ===========================================================================
+  // UI Component Builders
+  // ===========================================================================
+
+  Widget _buildMetricCard(String titulo, String valor, Color color, IconData icono) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Column(
         children: [
@@ -254,11 +228,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
           const SizedBox(height: 8),
           Text(
             valor,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: color),
           ),
           const SizedBox(height: 4),
           Text(
@@ -271,578 +241,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
     );
   }
 
-  void _mostrarOpcionesHistorial() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.delete_sweep, color: Colors.red),
-              title: const Text('Limpiar todo el historial'),
-              subtitle: const Text('Eliminar todos los cálculos guardados'),
-              onTap: () {
-                Navigator.pop(context);
-                _limpiarTodoElHistorial();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cancel),
-              title: const Text('Cancelar'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _limpiarTodoElHistorial() async {
-    final bool? confirmar = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Limpiar Historial'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning, color: Colors.orange, size: 48),
-              const SizedBox(height: 16),
-              const Text(
-                '¿Estás seguro de que deseas eliminar TODOS los cálculos del historial?',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Se eliminarán ${_historialIGV.length} cálculos.',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Esta acción no se puede deshacer.',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Eliminar Todo'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmar == true) {
-      try {
-        await HistorialIGVService.limpiarHistorial();
-
-        // Recargar datos
-        await _cargarDatos();
-
-        if (mounted) {
-          Navigator.pop(context); // Cerrar el modal del historial
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Historial eliminado correctamente'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al eliminar el historial: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _eliminarCalculo(HistorialIGV calculo) async {
-    final bool? confirmar = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Eliminar Cálculo'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('¿Estás seguro de que deseas eliminar este cálculo?'),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Fecha: ${calculo.fechaFormateada}',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text('Tipo: ${calculo.tipoNegocioFormatted}'),
-                    Text(calculo.resumenCalculo),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Esta acción no se puede deshacer.',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Eliminar'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmar == true) {
-      // Mostrar indicador de carga
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                SizedBox(width: 16),
-                Text('Eliminando cálculo...'),
-              ],
-            ),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-
-      try {
-        // Eliminar directamente de la lista local primero para feedback inmediato
-        setState(() {
-          _historialIGV.removeWhere((item) => item.id == calculo.id);
-        });
-
-        // Luego eliminar de la base de datos
-        await HistorialIGVService.eliminarCalculo(calculo.id);
-
-        // Recargar datos para asegurar sincronización
-        await _cargarDatos();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cálculo eliminado correctamente'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      } catch (e) {
-        // Si hay error, recargar datos para restaurar el estado
-        await _cargarDatos();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al eliminar: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  // ==================== MÉTODOS PARA HISTORIAL DE RENTA ====================
-
-  Future<void> _eliminarCalculoRenta(HistorialRenta calculo) async {
-    final bool? confirmar = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Eliminar Cálculo de Renta'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('¿Estás seguro de que deseas eliminar este cálculo?'),
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Fecha: ${calculo.fechaFormateada}',
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    Text('Régimen: ${calculo.regimenFormatted}'),
-                    Text(calculo.resumenCalculo),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Esta acción no se puede deshacer.',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Eliminar'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmar == true) {
-      // Mostrar indicador de carga
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(
-              children: [
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                SizedBox(width: 16),
-                Text('Eliminando cálculo de renta...'),
-              ],
-            ),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-
-      try {
-        // Eliminar directamente de la lista local primero para feedback inmediato
-        setState(() {
-          _historialRenta.removeWhere((item) => item.id == calculo.id);
-        });
-
-        // Luego eliminar de la base de datos
-        await HistorialRentaService.eliminarCalculo(calculo.id);
-
-        // Recargar datos para asegurar sincronización
-        await _cargarDatos();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cálculo de renta eliminado correctamente'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      } catch (e) {
-        // Si hay error, recargar datos para restaurar el estado
-        await _cargarDatos();
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al eliminar: ${e.toString()}'),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  void _mostrarOpcionesHistorialRenta() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.delete_sweep, color: Colors.red),
-              title: const Text('Limpiar todo el historial de Renta'),
-              subtitle: const Text(
-                'Eliminar todos los cálculos de renta guardados',
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                _limpiarTodoElHistorialRenta();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.cancel),
-              title: const Text('Cancelar'),
-              onTap: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _limpiarTodoElHistorialRenta() async {
-    final bool? confirmar = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Limpiar Historial de Renta'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning, color: Colors.orange, size: 48),
-              const SizedBox(height: 16),
-              const Text(
-                '¿Estás seguro de que deseas eliminar TODOS los cálculos de renta del historial?',
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Se eliminarán ${_historialRenta.length} cálculos.',
-                style: const TextStyle(fontWeight: FontWeight.w600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Esta acción no se puede deshacer.',
-                style: TextStyle(
-                  color: Colors.red,
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Eliminar Todo'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmar == true) {
-      try {
-        await HistorialRentaService.eliminarTodos();
-
-        // Recargar datos
-        await _cargarDatos();
-
-        if (mounted) {
-          Navigator.pop(context); // Cerrar el modal del historial
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Historial de renta eliminado correctamente'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error al eliminar el historial de renta: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  void _mostrarHistorialRenta() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                height: 4,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(Icons.assignment, color: AppColors.igvColor),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Historial de Cálculos Renta',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_historialRenta.isNotEmpty)
-                          IconButton(
-                            onPressed: _mostrarOpcionesHistorialRenta,
-                            icon: const Icon(Icons.more_vert),
-                            tooltip: 'Opciones',
-                          ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              // Content
-              Expanded(
-                child: _historialRenta.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.assignment_outlined,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No hay cálculos de renta registrados',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Los cálculos aparecerán aquí una vez que realices tu primer cálculo de Renta',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _historialRenta.length,
-                        itemBuilder: (context, index) {
-                          final calculo = _historialRenta[index];
-                          return _buildHistorialRentaCard(calculo);
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHistorialRentaCard(HistorialRenta calculo) {
+  Widget _buildHistorialIgvCard(HistorialIGV calculo) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -861,290 +260,13 @@ class _ReportesScreenState extends State<ReportesScreen> {
                       Text(
                         calculo.fechaFormateada,
                         style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary),
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: calculo.debePagar
-                              ? AppColors.igvColor.withOpacity(0.1)
-                              : AppColors.saldoFavorColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          calculo.regimenFormatted,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: calculo.debePagar
-                                ? AppColors.igvColor
-                                : AppColors.saldoFavorColor,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => _eliminarCalculoRenta(calculo),
-                  icon: const Icon(Icons.delete_outline),
-                  color: Colors.red[400],
-                  tooltip: 'Eliminar cálculo',
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                  padding: const EdgeInsets.all(4),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildResumenItemRenta(
-                    'Ingresos',
-                    'S/ ${calculo.ingresos.toStringAsFixed(2)}',
-                    Icons.trending_up,
-                    Colors.green,
-                  ),
-                ),
-                Expanded(
-                  child: _buildResumenItemRenta(
-                    'Gastos',
-                    'S/ ${calculo.gastos.toStringAsFixed(2)}',
-                    Icons.trending_down,
-                    Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: calculo.debePagar
-                    ? AppColors.igvColor.withOpacity(0.1)
-                    : calculo.tienePerdida
-                    ? Colors.orange.withOpacity(0.1)
-                    : AppColors.saldoFavorColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    calculo.resumenCalculo,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: calculo.debePagar
-                          ? AppColors.igvColor
-                          : calculo.tienePerdida
-                          ? Colors.orange[700]
-                          : AppColors.saldoFavorColor,
-                    ),
-                  ),
-                  if (calculo.usandoCoeficiente)
-                    Text(
-                      'Con coeficiente',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResumenItemRenta(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                ),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==================== MÉTODOS PARA HISTORIAL DE IGV ====================
-
-  void _mostrarHistorialIGV() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Handle
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                height: 4,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(Icons.history, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Historial de Cálculos IGV',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (_historialIGV.isNotEmpty)
-                          IconButton(
-                            onPressed: _mostrarOpcionesHistorial,
-                            icon: const Icon(Icons.more_vert),
-                            tooltip: 'Opciones',
-                          ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              // Content
-              Expanded(
-                child: _historialIGV.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.history_toggle_off,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No hay cálculos registrados',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey[600],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Los cálculos aparecerán aquí una vez que realices tu primer cálculo de IGV',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _historialIGV.length,
-                        itemBuilder: (context, index) {
-                          final calculo = _historialIGV[index];
-                          return _buildHistorialCard(calculo);
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHistorialCard(HistorialIGV calculo) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        calculo.fechaFormateada,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: calculo.tieneSaldoAFavor
                               ? AppColors.saldoFavorColor.withOpacity(0.1)
@@ -1166,15 +288,10 @@ class _ReportesScreenState extends State<ReportesScreen> {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => _eliminarCalculo(calculo),
+                  onPressed: () => _handleDeleteIgvItem(calculo),
                   icon: const Icon(Icons.delete_outline),
                   color: Colors.red[400],
                   tooltip: 'Eliminar cálculo',
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                  padding: const EdgeInsets.all(4),
                 ),
               ],
             ),
@@ -1182,7 +299,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
             Row(
               children: [
                 Expanded(
-                  child: _buildResumenItem(
+                  child: _buildDetailItem(
                     'Ventas',
                     'S/ ${calculo.ventasGravadas.toStringAsFixed(2)}',
                     Icons.trending_up,
@@ -1190,7 +307,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
                   ),
                 ),
                 Expanded(
-                  child: _buildResumenItem(
+                  child: _buildDetailItem(
                     'Compras',
                     'S/ ${(calculo.compras18 + calculo.compras10).toStringAsFixed(2)}',
                     Icons.shopping_cart,
@@ -1221,9 +338,120 @@ class _ReportesScreenState extends State<ReportesScreen> {
                           : AppColors.igvColor,
                     ),
                   ),
-                  if (calculo.saldoAnterior > 0)
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistorialRentaCard(HistorialRenta calculo) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        calculo.fechaFormateada,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: calculo.debePagar
+                              ? AppColors.igvColor.withOpacity(0.1)
+                              : AppColors.saldoFavorColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          calculo.regimenFormatted,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: calculo.debePagar
+                                ? AppColors.igvColor
+                                : AppColors.saldoFavorColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _handleDeleteRentaItem(calculo),
+                  icon: const Icon(Icons.delete_outline),
+                  color: Colors.red[400],
+                  tooltip: 'Eliminar cálculo',
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildDetailItem(
+                    'Ingresos',
+                    'S/ ${calculo.ingresos.toStringAsFixed(2)}',
+                    Icons.trending_up,
+                    Colors.green,
+                  ),
+                ),
+                Expanded(
+                  child: _buildDetailItem(
+                    'Gastos',
+                    'S/ ${calculo.gastos.toStringAsFixed(2)}',
+                    Icons.trending_down,
+                    Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: calculo.debePagar
+                    ? AppColors.igvColor.withOpacity(0.1)
+                    : calculo.tienePerdida
+                        ? Colors.orange.withOpacity(0.1)
+                        : AppColors.saldoFavorColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    calculo.resumenCalculo,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: calculo.debePagar
+                          ? AppColors.igvColor
+                          : calculo.tienePerdida
+                              ? Colors.orange[700]
+                              : AppColors.saldoFavorColor,
+                    ),
+                  ),
+                  if (calculo.usandoCoeficiente)
                     Text(
-                      'Saldo anterior: S/ ${calculo.saldoAnterior.toStringAsFixed(2)}',
+                      'Con coeficiente',
                       style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                 ],
@@ -1234,15 +462,11 @@ class _ReportesScreenState extends State<ReportesScreen> {
       ),
     );
   }
-
-  Widget _buildResumenItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(8),
+  
+  /// A reusable widget for displaying a small detail item with a label, value, and icon.
+  Widget _buildDetailItem(String label, String value, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
           Icon(icon, size: 16, color: color),
@@ -1258,15 +482,353 @@ class _ReportesScreenState extends State<ReportesScreen> {
                 Text(
                   value,
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: color,
-                  ),
+                      fontSize: 12, fontWeight: FontWeight.w600, color: color),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // Core Logic & Data Handlers
+  // ===========================================================================
+
+  Future<void> _cargarDatos() async {
+    if (!mounted) return;
+    setState(() => _cargandoDatos = true);
+    try {
+      final igvData = await Future.wait([
+        HistorialIGVService.obtenerTodosLosCalculos(),
+        HistorialIGVService.obtenerResumenReciente(),
+      ]);
+      final rentaData = await Future.wait([
+        HistorialRentaService.obtenerHistorial(),
+        HistorialRentaService.obtenerEstadisticas(),
+      ]);
+
+      if (mounted) {
+        setState(() {
+          _historialIGV = igvData[0] as List<HistorialIGV>;
+          _resumenIGV = igvData[1] as Map<String, dynamic>;
+          _historialRenta = rentaData[0] as List<HistorialRenta>;
+          _resumenRenta = rentaData[1] as Map<String, dynamic>;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al cargar datos: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _cargandoDatos = false);
+      }
+    }
+  }
+
+  /// Generic handler to execute a task with loading/success/error feedback.
+  Future<void> _executeTaskWithFeedback({
+    required Future<void> Function() task,
+    required String loadingMessage,
+    required String successMessage,
+    Function? optimisticUpdate,
+  }) async {
+    if (!mounted) return;
+
+    // Perform optimistic update if provided
+    if (optimisticUpdate != null) {
+      setState(() => optimisticUpdate());
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+        ),
+        const SizedBox(width: 16),
+        Text(loadingMessage),
+      ]),
+      duration: const Duration(seconds: 5), // Keep it visible during the task
+    ));
+
+    try {
+      await task();
+      await _cargarDatos(); // Refresh all data to ensure consistency
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(successMessage),
+          backgroundColor: Colors.green,
+        ));
+      }
+    } catch (e) {
+      await _cargarDatos(); // Revert state by reloading from source on error
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ));
+      }
+    }
+  }
+  
+  // ===========================================================================
+  // Deletion Handlers
+  // ===========================================================================
+  
+  Future<void> _handleDeleteIgvItem(HistorialIGV calculo) async {
+    final bool? confirmed = await _showConfirmationDialog(
+      title: 'Eliminar Cálculo IGV',
+      content: '¿Estás seguro de que deseas eliminar el cálculo del ${calculo.fechaFormateada}?',
+    );
+
+    if (confirmed == true) {
+      _executeTaskWithFeedback(
+        task: () => HistorialIGVService.eliminarCalculo(calculo.id),
+        loadingMessage: 'Eliminando cálculo...',
+        successMessage: 'Cálculo eliminado correctamente.',
+        optimisticUpdate: () => _historialIGV.removeWhere((item) => item.id == calculo.id),
+      );
+    }
+  }
+  
+  Future<void> _handleDeleteRentaItem(HistorialRenta calculo) async {
+    final bool? confirmed = await _showConfirmationDialog(
+      title: 'Eliminar Cálculo Renta',
+      content: '¿Estás seguro de que deseas eliminar el cálculo del ${calculo.fechaFormateada}?',
+    );
+     if (confirmed == true) {
+      _executeTaskWithFeedback(
+        task: () => HistorialRentaService.eliminarCalculo(calculo.id),
+        loadingMessage: 'Eliminando cálculo...',
+        successMessage: 'Cálculo eliminado correctamente.',
+        optimisticUpdate: () => _historialRenta.removeWhere((item) => item.id == calculo.id),
+      );
+    }
+  }
+
+  Future<void> _handleClearIgvHistory() async {
+     final bool? confirmed = await _showConfirmationDialog(
+      title: 'Limpiar Historial IGV',
+      content: '¿Estás seguro de que deseas eliminar TODOS los ${_historialIGV.length} cálculos de IGV? Esta acción no se puede deshacer.',
+    );
+    if (confirmed == true) {
+      Navigator.pop(context); // Close options modal before showing snackbar
+      _executeTaskWithFeedback(
+        task: HistorialIGVService.limpiarHistorial,
+        loadingMessage: 'Limpiando historial de IGV...',
+        successMessage: 'Historial de IGV eliminado.',
+        optimisticUpdate: () => _historialIGV.clear(),
+      );
+    }
+  }
+
+  Future<void> _handleClearRentaHistory() async {
+    final bool? confirmed = await _showConfirmationDialog(
+      title: 'Limpiar Historial Renta',
+      content: '¿Estás seguro de que deseas eliminar TODOS los ${_historialRenta.length} cálculos de Renta? Esta acción no se puede deshacer.',
+    );
+     if (confirmed == true) {
+       Navigator.pop(context); // Close options modal
+      _executeTaskWithFeedback(
+        task: HistorialRentaService.eliminarTodos,
+        loadingMessage: 'Limpiando historial de Renta...',
+        successMessage: 'Historial de Renta eliminado.',
+        optimisticUpdate: () => _historialRenta.clear(),
+      );
+    }
+  }
+
+  // ===========================================================================
+  // Modal & Dialog Handlers
+  // ===========================================================================
+
+  void _handleShowHistoryIGV() {
+    _showHistoryModal(
+      title: 'Historial de Cálculos IGV',
+      icon: Icons.account_balance,
+      iconColor: AppColors.saldoFavorColor,
+      historyList: _historialIGV,
+      itemBuilder: (context, index) => _buildHistorialIgvCard(_historialIGV[index]),
+      onClearAll: _handleClearIgvHistory,
+      emptyState: _buildEmptyState(
+        icon: Icons.history_toggle_off,
+        message: 'No hay cálculos de IGV registrados.',
+      ),
+    );
+  }
+
+  void _handleShowHistoryRenta() {
+    _showHistoryModal(
+      title: 'Historial de Cálculos Renta',
+      icon: Icons.assignment,
+      iconColor: AppColors.igvColor,
+      historyList: _historialRenta,
+      itemBuilder: (context, index) => _buildHistorialRentaCard(_historialRenta[index]),
+      onClearAll: _handleClearRentaHistory,
+      emptyState: _buildEmptyState(
+        icon: Icons.assignment_outlined,
+        message: 'No hay cálculos de Renta registrados.',
+      ),
+    );
+  }
+
+  /// Generic function to show a draggable modal bottom sheet for a history list.
+  void _showHistoryModal({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required List<dynamic> historyList,
+    required Widget Function(BuildContext, int) itemBuilder,
+    required VoidCallback onClearAll,
+    required Widget emptyState,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, scrollController) => Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Handle
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                height: 4,
+                width: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              // Header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 8, 0),
+                child: Row(
+                  children: [
+                    Icon(icon, color: iconColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(title,
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary)),
+                    ),
+                    if (historyList.isNotEmpty)
+                      IconButton(
+                        onPressed: () => _showClearHistoryOptions(onClearAll),
+                        icon: const Icon(Icons.more_vert),
+                        tooltip: 'Opciones',
+                      ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Content
+              Expanded(
+                child: historyList.isEmpty
+                    ? emptyState
+                    : ListView.builder(
+                        controller: scrollController,
+                        padding: const EdgeInsets.all(16),
+                        itemCount: historyList.length,
+                        itemBuilder: itemBuilder,
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  
+  void _showClearHistoryOptions(VoidCallback onConfirm) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.delete_sweep, color: Colors.red),
+            title: const Text('Limpiar todo el historial'),
+            onTap: onConfirm,
+          ),
+           ListTile(
+            leading: const Icon(Icons.cancel),
+            title: const Text('Cancelar'),
+            onTap: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool?> _showConfirmationDialog({
+    required String title,
+    required String content,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState({required IconData icon, required String message}) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

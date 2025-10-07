@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/utils/format_utils.dart';
+import '../../core/utils/input_formatters.dart';
 import '../../services/calculo_service.dart';
 import '../../services/actividad_reciente_service.dart';
 import '../../widgets/compulsa_appbar.dart';
@@ -49,7 +51,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
       if (mounted) {
         setState(() {
           _saldoAnteriorController.text = saldoAnterior > 0
-              ? saldoAnterior.toStringAsFixed(2)
+              ? FormatUtils.formatearNumeroConSeparadores(saldoAnterior, decimales: 2)
               : '';
         });
       }
@@ -104,16 +106,16 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
     });
 
     try {
-      final ventasGravadas = double.parse(_ventasGravadasController.text);
+      final ventasGravadas = double.parse(FormatUtils.limpiarFormatoNumero(_ventasGravadasController.text));
       final compras18 = _compras18Controller.text.isNotEmpty
-          ? double.parse(_compras18Controller.text)
+          ? double.parse(FormatUtils.limpiarFormatoNumero(_compras18Controller.text))
           : 0.0;
       final compras10 = _compras10Controller.text.isNotEmpty
-          ? double.parse(_compras10Controller.text)
+          ? double.parse(FormatUtils.limpiarFormatoNumero(_compras10Controller.text))
           : 0.0;
       final saldoAnterior = _saldoAnteriorController.text.isEmpty
           ? 0.0
-          : double.parse(_saldoAnteriorController.text);
+          : double.parse(FormatUtils.limpiarFormatoNumero(_saldoAnteriorController.text));
 
       final resultado = await CalculoService.calcularIgvPorTipo(
         ventasGravadas: ventasGravadas,
@@ -496,7 +498,10 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
             const SizedBox(height: 16),
             TextFormField(
               controller: controller,
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                MoneyInputFormatter(decimales: 2, valorMaximo: 999999999999.99),
+              ],
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1244,12 +1249,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
     }
     // Para números normales, mostrar con separadores de miles
     else {
-      return monto
-          .toStringAsFixed(0)
-          .replaceAllMapped(
-            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-          );
+      return FormatUtils.formatearNumeroConSeparadores(monto, decimales: 0);
     }
   }
 
@@ -1298,9 +1298,9 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                         const SizedBox(height: 4),
                         Text(
                           _saldoAnteriorController.text.isNotEmpty &&
-                                  double.parse(_saldoAnteriorController.text) >
+                                  double.parse(FormatUtils.limpiarFormatoNumero(_saldoAnteriorController.text)) >
                                       0
-                              ? 'Saldo a favor del último cálculo: S/ ${_saldoAnteriorController.text}'
+                              ? 'Saldo a favor del último cálculo: S/ ${FormatUtils.formatearNumeroConSeparadores(_saldoAnteriorController.text, decimales: 2)}'
                               : 'No hay saldo anterior disponible',
                           style: TextStyle(
                             fontSize: 12,

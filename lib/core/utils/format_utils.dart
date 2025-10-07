@@ -1,9 +1,59 @@
 import '../constants/app_constants.dart';
 
 class FormatUtils {
-  // Formatear moneda peruana
+  // Formatear moneda peruana con separadores de miles
   static String formatearMoneda(double monto) {
-    return 'S/ ${monto.toStringAsFixed(2)}';
+    return 'S/ ${formatearNumeroConSeparadores(monto, decimales: 2)}';
+  }
+
+  // Formatear moneda compacta para números muy grandes
+  static String formatearMonedaCompacta(double monto) {
+    if (monto >= 1000000000) {
+      return 'S/ ${(monto / 1000000000).toStringAsFixed(1)}B';
+    } else if (monto >= 1000000) {
+      return 'S/ ${(monto / 1000000).toStringAsFixed(1)}M';
+    } else if (monto >= 1000) {
+      return 'S/ ${(monto / 1000).toStringAsFixed(1)}K';
+    }
+    return formatearMoneda(monto);
+  }
+
+  // Formatear número con separadores de miles
+  static String formatearNumeroConSeparadores(dynamic numero, {int decimales = 2}) {
+    double valor = 0.0;
+    if (numero is String) {
+      valor = double.tryParse(numero) ?? 0.0;
+    } else if (numero is double) {
+      valor = numero;
+    } else if (numero is int) {
+      valor = numero.toDouble();
+    }
+
+    // Separar parte entera y decimal
+    String numeroStr = valor.toStringAsFixed(decimales);
+    List<String> partes = numeroStr.split('.');
+    String parteEntera = partes[0];
+    String parteDecimal = partes.length > 1 ? partes[1] : '';
+
+    // Agregar separadores de miles
+    String resultado = '';
+    for (int i = 0; i < parteEntera.length; i++) {
+      if (i > 0 && (parteEntera.length - i) % 3 == 0) {
+        resultado += ',';
+      }
+      resultado += parteEntera[i];
+    }
+
+    if (decimales > 0 && parteDecimal.isNotEmpty) {
+      resultado += '.$parteDecimal';
+    }
+
+    return resultado;
+  }
+
+  // Limpiar formato de número (remover separadores)
+  static String limpiarFormatoNumero(String numeroFormateado) {
+    return numeroFormateado.replaceAll(',', '').replaceAll('S/ ', '');
   }
 
   // Formatear porcentaje
