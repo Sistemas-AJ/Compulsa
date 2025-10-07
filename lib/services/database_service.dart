@@ -22,6 +22,28 @@ class DatabaseService {
     return _database!;
   }
 
+  // Método para resetear la base de datos forzando una nueva creación
+  Future<void> resetDatabase() async {
+    try {
+      if (_database != null) {
+        await _database!.close();
+        _database = null;
+      }
+      
+      String databasesPath = await getDatabasesPath();
+      String path = join(databasesPath, 'Compulsa.db');
+      
+      // Eliminar la base de datos existente
+      await deleteDatabase(path);
+      print('Base de datos eliminada y será recreada');
+      
+      // Reinicializar
+      _database = await _initDatabase();
+    } catch (e) {
+      print('Error al resetear base de datos: $e');
+    }
+  }
+
   Future<Database> _initDatabase() async {
     // No inicializar sqflite_ffi aquí, ya se hace en main.dart
     
@@ -30,7 +52,7 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: _createDatabase,
       onUpgrade: _upgradeDatabase,
       onOpen: (db) async {
@@ -114,6 +136,25 @@ class DatabaseService {
         fecha_creacion TEXT NOT NULL,
         icono TEXT NOT NULL,
         color TEXT NOT NULL
+      )
+    ''');
+
+    // Crear tabla Declaraciones
+    await db.execute('''
+      CREATE TABLE Declaraciones (
+        id TEXT PRIMARY KEY,
+        empresa_id INTEGER NOT NULL,
+        tipo TEXT NOT NULL,
+        periodo TEXT NOT NULL,
+        monto REAL NOT NULL,
+        estado TEXT NOT NULL,
+        fecha_creacion TEXT NOT NULL,
+        fecha_presentacion TEXT,
+        numero_formulario TEXT,
+        numero_orden TEXT,
+        datos_json TEXT,
+        archivo_pdf TEXT,
+        FOREIGN KEY (empresa_id) REFERENCES Empresas (id)
       )
     ''');
 
@@ -222,6 +263,32 @@ class DatabaseService {
         print('Columna imagen_perfil agregada correctamente');
       } catch (e) {
         print('Error al agregar columna imagen_perfil: $e');
+      }
+    }
+    
+    if (oldVersion < 6) {
+      // Agregar tabla Declaraciones en la versión 6
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS Declaraciones (
+            id TEXT PRIMARY KEY,
+            empresa_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL,
+            periodo TEXT NOT NULL,
+            monto REAL NOT NULL,
+            estado TEXT NOT NULL,
+            fecha_creacion TEXT NOT NULL,
+            fecha_presentacion TEXT,
+            numero_formulario TEXT,
+            numero_orden TEXT,
+            datos_json TEXT,
+            archivo_pdf TEXT,
+            FOREIGN KEY (empresa_id) REFERENCES Empresas (id)
+          )
+        ''');
+        print('Tabla Declaraciones creada correctamente');
+      } catch (e) {
+        print('Error al crear tabla Declaraciones: $e');
       }
     }
   }

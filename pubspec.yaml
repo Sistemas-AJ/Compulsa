@@ -39,6 +39,13 @@ dependencies:
   path: ^1.9.1
   image_picker: ^1.0.4
   path_provider: ^2.1.1
+  # Para generación de PDF
+  pdf: ^3.10.4
+  printing: ^5.11.0
+  # Para compartir archivos
+  share_plus: ^7.2.1
+  # Para formateo de fechas
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:

@@ -23,6 +23,7 @@ class Declaracion {
   final String? numeroFormulario;
   final String? numeroOrden;
   final Map<String, dynamic> datos;
+  final String? archivoPdf;
 
   Declaracion({
     required this.id,
@@ -36,6 +37,7 @@ class Declaracion {
     this.numeroFormulario,
     this.numeroOrden,
     this.datos = const {},
+    this.archivoPdf,
   });
 
   factory Declaracion.fromMap(Map<String, dynamic> map) {
@@ -58,6 +60,7 @@ class Declaracion {
       numeroFormulario: map['numeroFormulario'],
       numeroOrden: map['numeroOrden'],
       datos: Map<String, dynamic>.from(map['datos'] ?? {}),
+      archivoPdf: map['archivoPdf'],
     );
   }
 
@@ -74,6 +77,7 @@ class Declaracion {
       'numeroFormulario': numeroFormulario,
       'numeroOrden': numeroOrden,
       'datos': datos,
+      'archivoPdf': archivoPdf,
     };
   }
 
