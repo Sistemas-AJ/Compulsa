@@ -267,30 +267,6 @@ class DatabaseService {
     }
     
     if (oldVersion < 6) {
-<<<<<<< HEAD
-      // Agregar tabla Declaraciones en la versión 6
-      try {
-        await db.execute('''
-          CREATE TABLE IF NOT EXISTS Declaraciones (
-            id TEXT PRIMARY KEY,
-            empresa_id INTEGER NOT NULL,
-            tipo TEXT NOT NULL,
-            periodo TEXT NOT NULL,
-            monto REAL NOT NULL,
-            estado TEXT NOT NULL,
-            fecha_creacion TEXT NOT NULL,
-            fecha_presentacion TEXT,
-            numero_formulario TEXT,
-            numero_orden TEXT,
-            datos_json TEXT,
-            archivo_pdf TEXT,
-            FOREIGN KEY (empresa_id) REFERENCES Empresas (id)
-          )
-        ''');
-        print('Tabla Declaraciones creada correctamente');
-      } catch (e) {
-        print('Error al crear tabla Declaraciones: $e');
-=======
       // Corregir tasas de renta incorrectas en la versión 6
       try {
         print('Corrigiendo tasas de renta incorrectas...');
@@ -333,7 +309,6 @@ class DatabaseService {
         
       } catch (e) {
         print('Error al corregir tasas de renta: $e');
->>>>>>> 11bfbe6ccacaf597cd99dcd125849f7557f19ef3
       }
     }
   }
