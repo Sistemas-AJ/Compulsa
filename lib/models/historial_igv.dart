@@ -2,27 +2,28 @@ class HistorialIGV {
   final String id;
   final DateTime fechaCalculo;
   final String tipoNegocio; // 'general' o 'restaurante_hotel'
-  
+
   // Datos de entrada
   final double ventasGravadas;
   final double compras18;
   final double compras10;
   final double saldoAnterior;
-  
+
   // IGV calculado
   final double igvVentas;
   final double igvCompras18;
   final double igvCompras10;
   final double totalIgvCompras;
-  
+
   // Resultado del cálculo
   final double calculoIgv;
   final double igvPorCancelar;
   final bool tieneSaldoAFavor;
   final double saldoAFavor;
   final double igvPorPagar;
-  final double saldoResultante; // Este será el saldo anterior para el siguiente cálculo
-  
+  final double
+  saldoResultante; // Este será el saldo anterior para el siguiente cálculo
+
   // Metadatos
   final double tasaIgvVentas;
   final String? observaciones;
@@ -56,11 +57,13 @@ class HistorialIGV {
     String? observaciones,
   }) {
     final String id = DateTime.now().millisecondsSinceEpoch.toString();
-    final DateTime fechaCalculo = DateTime.parse(calculoResult['fecha_calculo']);
-    
+    final DateTime fechaCalculo = DateTime.parse(
+      calculoResult['fecha_calculo'],
+    );
+
     // El saldo resultante es saldo a favor si tiene, caso contrario es 0
-    final double saldoResultante = calculoResult['tiene_saldo_a_favor'] 
-        ? calculoResult['saldo_a_favor'] 
+    final double saldoResultante = calculoResult['tiene_saldo_a_favor']
+        ? calculoResult['saldo_a_favor']
         : 0.0;
 
     return HistorialIGV(
@@ -139,8 +142,19 @@ class HistorialIGV {
   // Getters útiles
   String get fechaFormateada {
     final meses = [
-      '', 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+      '',
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return '${fechaCalculo.day} ${meses[fechaCalculo.month]} ${fechaCalculo.year}';
   }

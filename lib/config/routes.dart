@@ -21,7 +21,7 @@ class AppRoutes {
 
   static const String perfilUsuario = '/perfil-usuario';
   static const String actividadReciente = '/actividad-reciente';
-  
+
   // Mapa de rutas
   static Map<String, WidgetBuilder> get routes {
     return {
@@ -36,16 +36,19 @@ class AppRoutes {
       actividadReciente: (context) => const ActividadRecienteScreen(),
     };
   }
-  
+
   // Navegación programática
   static Future<void> navigateTo(BuildContext context, String routeName) {
     return Navigator.pushNamed(context, routeName);
   }
-  
-  static Future<void> navigateAndReplace(BuildContext context, String routeName) {
+
+  static Future<void> navigateAndReplace(
+    BuildContext context,
+    String routeName,
+  ) {
     return Navigator.pushReplacementNamed(context, routeName);
   }
-  
+
   static void goBack(BuildContext context) {
     Navigator.pop(context);
   }

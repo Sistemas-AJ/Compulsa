@@ -68,10 +68,7 @@ class ActividadReciente {
     return ActividadReciente(
       tipo: 'calculo_igv',
       descripcion: 'Cálculo de IGV: S/ ${igv.toStringAsFixed(2)}',
-      datos: {
-        'baseImponible': baseImponible,
-        'igv': igv,
-      },
+      datos: {'baseImponible': baseImponible, 'igv': igv},
       fechaCreacion: DateTime.now(),
       icono: 'receipt',
       color: '#2196F3',
@@ -85,10 +82,7 @@ class ActividadReciente {
     return ActividadReciente(
       tipo: 'regimen_creado',
       descripcion: 'Régimen creado: $nombre (${tasaRenta}%)',
-      datos: {
-        'nombre': nombre,
-        'tasaRenta': tasaRenta,
-      },
+      datos: {'nombre': nombre, 'tasaRenta': tasaRenta},
       fechaCreacion: DateTime.now(),
       icono: 'add_business',
       color: '#FF9800',
@@ -102,10 +96,7 @@ class ActividadReciente {
     return ActividadReciente(
       tipo: 'empresa_configurada',
       descripcion: 'Empresa configurada: $razonSocial',
-      datos: {
-        'razonSocial': razonSocial,
-        'ruc': ruc,
-      },
+      datos: {'razonSocial': razonSocial, 'ruc': ruc},
       fechaCreacion: DateTime.now(),
       icono: 'business',
       color: '#9C27B0',

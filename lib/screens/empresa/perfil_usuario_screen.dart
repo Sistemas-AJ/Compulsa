@@ -19,15 +19,15 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nombreController = TextEditingController();
   final _rucController = TextEditingController();
-  
+
   bool _cargandoDatos = false;
   bool _modoEdicion = false;
-  
+
   Empresa? _empresaActual;
   List<RegimenTributario> _regimenes = [];
   int? _regimenSeleccionado;
   RegimenTributario? _regimenActual;
-  
+
   final ImagePicker _picker = ImagePicker();
   String? _imagenPerfilPath;
 
@@ -62,16 +62,20 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
         _regimenes = regimenes;
         _empresaActual = empresas.isNotEmpty ? empresas.first : null;
         _cargandoDatos = false;
-        
+
         if (_empresaActual != null) {
           _nombreController.text = _empresaActual!.nombreRazonSocial;
           _rucController.text = _empresaActual!.ruc;
           _imagenPerfilPath = _empresaActual!.imagenPerfil;
-          
-          final regimenExiste = regimenes.any((r) => r.id == _empresaActual!.regimenId);
+
+          final regimenExiste = regimenes.any(
+            (r) => r.id == _empresaActual!.regimenId,
+          );
           if (regimenExiste) {
             _regimenSeleccionado = _empresaActual!.regimenId;
-            _regimenActual = regimenes.firstWhere((r) => r.id == _empresaActual!.regimenId);
+            _regimenActual = regimenes.firstWhere(
+              (r) => r.id == _empresaActual!.regimenId,
+            );
           } else if (regimenes.isNotEmpty) {
             _regimenSeleccionado = regimenes.first.id;
             _regimenActual = regimenes.first;
@@ -88,9 +92,9 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
         _cargandoDatos = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al cargar datos: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al cargar datos: $e')));
       }
     }
   }
@@ -151,35 +155,39 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
           maxHeight: 512,
           imageQuality: 85,
         );
-        
+
         if (image != null) {
           // Crear directorio específico para imágenes de perfil
           final Directory appDir = await getApplicationDocumentsDirectory();
-          final Directory profileDir = Directory('${appDir.path}/profile_images');
-          
+          final Directory profileDir = Directory(
+            '${appDir.path}/profile_images',
+          );
+
           if (!await profileDir.exists()) {
             await profileDir.create(recursive: true);
           }
-          
+
           // Eliminar imagen anterior si existe
-          if (_imagenPerfilPath != null && File(_imagenPerfilPath!).existsSync()) {
+          if (_imagenPerfilPath != null &&
+              File(_imagenPerfilPath!).existsSync()) {
             try {
               await File(_imagenPerfilPath!).delete();
             } catch (e) {
               print('Error eliminando imagen anterior: $e');
             }
           }
-          
-          final String fileName = 'perfil_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+          final String fileName =
+              'perfil_${DateTime.now().millisecondsSinceEpoch}.jpg';
           final String localPath = '${profileDir.path}/$fileName';
-          
+
           // Copiar la imagen al directorio local
           await File(image.path).copy(localPath);
-          
+
           setState(() {
             _imagenPerfilPath = localPath;
           });
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -221,10 +229,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
           children: [
             Icon(icon, size: 32, color: Theme.of(context).primaryColor),
             const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w500),
-            ),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -233,7 +238,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
 
   Future<void> _guardarPerfil() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (_regimenSeleccionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Seleccione un régimen tributario')),
@@ -279,9 +284,9 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
         _cargandoDatos = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al guardar: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error al guardar: $e')));
       }
     }
   }
@@ -290,21 +295,21 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
     if (value == null || value.trim().isEmpty) {
       return 'El RUC es obligatorio';
     }
-    
+
     final ruc = value.trim();
     if (ruc.length != 11) {
       return 'El RUC debe tener 11 dígitos';
     }
-    
+
     if (!RegExp(r'^\d{11}$').hasMatch(ruc)) {
       return 'El RUC debe contener solo números';
     }
-    
+
     final firstDigit = int.parse(ruc[0]);
     if (firstDigit != 1 && firstDigit != 2) {
       return 'El RUC debe comenzar con 1 o 2';
     }
-    
+
     return null;
   }
 
@@ -315,7 +320,9 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
         gradient: LinearGradient(
           colors: [
             Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withValues(red: 0.2, green: 0.3, blue: 0.8),
+            Theme.of(
+              context,
+            ).primaryColor.withValues(red: 0.2, green: 0.3, blue: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -336,13 +343,18 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
       child: Column(
         children: [
           GestureDetector(
-            onTap: _modoEdicion || _empresaActual == null ? _seleccionarImagen : null,
+            onTap: _modoEdicion || _empresaActual == null
+                ? _seleccionarImagen
+                : null,
             child: Stack(
               children: [
                 Container(
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 4),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                      width: 4,
+                    ),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.2),
@@ -354,10 +366,14 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   child: CircleAvatar(
                     radius: 60,
                     backgroundColor: Colors.white.withValues(alpha: 0.2),
-                    backgroundImage: _imagenPerfilPath != null && File(_imagenPerfilPath!).existsSync()
+                    backgroundImage:
+                        _imagenPerfilPath != null &&
+                            File(_imagenPerfilPath!).existsSync()
                         ? FileImage(File(_imagenPerfilPath!))
                         : null,
-                    child: _imagenPerfilPath == null || !File(_imagenPerfilPath!).existsSync()
+                    child:
+                        _imagenPerfilPath == null ||
+                            !File(_imagenPerfilPath!).existsSync()
                         ? const Icon(
                             Icons.business_center,
                             size: 60,
@@ -401,7 +417,10 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1,
+              ),
             ),
             child: Column(
               children: [
@@ -417,7 +436,10 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                 if (_empresaActual?.ruc != null) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
@@ -442,7 +464,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
 
   Widget _buildRegimenInfo() {
     if (_regimenActual == null) return const SizedBox.shrink();
-    
+
     return Container(
       margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -467,11 +489,18 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [Theme.of(context).primaryColor, Theme.of(context).primaryColor.withValues(alpha: 0.8)],
+                      colors: [
+                        Theme.of(context).primaryColor,
+                        Theme.of(context).primaryColor.withValues(alpha: 0.8),
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.account_balance, color: Colors.white, size: 24),
+                  child: const Icon(
+                    Icons.account_balance,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 const Expanded(
@@ -496,14 +525,21 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 1.5),
+                border: Border.all(
+                  color: Colors.blue.withValues(alpha: 0.2),
+                  width: 1.5,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.verified, color: Colors.blue.shade600, size: 20),
+                      Icon(
+                        Icons.verified,
+                        color: Colors.blue.shade600,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -533,7 +569,9 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                         child: _buildTasaCard(
                           'IGV',
                           _regimenActual!.tasaIGVFormateada,
-                          _regimenActual!.pagaIGV ? Colors.green.shade600 : Colors.grey.shade500,
+                          _regimenActual!.pagaIGV
+                              ? Colors.green.shade600
+                              : Colors.grey.shade500,
                           Icons.receipt_long,
                         ),
                       ),
@@ -548,7 +586,12 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
     );
   }
 
-  Widget _buildTasaCard(String titulo, String tasa, Color color, IconData icon) {
+  Widget _buildTasaCard(
+    String titulo,
+    String tasa,
+    Color color,
+    IconData icon,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -626,20 +669,25 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
-                      Icons.edit_document, 
-                      color: Theme.of(context).primaryColor, 
-                      size: 24
+                      Icons.edit_document,
+                      color: Theme.of(context).primaryColor,
+                      size: 24,
                     ),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'Información de la Empresa',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   if (!_modoEdicion && _empresaActual != null)
@@ -673,22 +721,33 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
-                  fillColor: (_modoEdicion || _empresaActual == null) 
-                      ? Colors.grey.shade50 
+                  fillColor: (_modoEdicion || _empresaActual == null)
+                      ? Colors.grey.shade50
                       : Colors.grey.shade100,
                   prefixIcon: Container(
                     margin: const EdgeInsets.all(8),
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.business_center, color: Theme.of(context).primaryColor),
+                    child: Icon(
+                      Icons.business_center,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
                 style: const TextStyle(fontSize: 14),
                 validator: (value) {
@@ -715,11 +774,14 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
-                  fillColor: (_modoEdicion || _empresaActual == null) 
-                      ? Colors.grey.shade50 
+                  fillColor: (_modoEdicion || _empresaActual == null)
+                      ? Colors.grey.shade50
                       : Colors.grey.shade100,
                   prefixIcon: Container(
                     margin: const EdgeInsets.all(8),
@@ -730,7 +792,10 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                     ),
                     child: const Icon(Icons.badge, color: Colors.orange),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
                 ),
                 style: const TextStyle(fontSize: 16),
                 keyboardType: TextInputType.number,
@@ -742,9 +807,9 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
               ),
               const SizedBox(height: 20),
               DropdownButtonFormField<int>(
-                value: _regimenes.any((r) => r.id == _regimenSeleccionado) 
-                       ? _regimenSeleccionado 
-                       : null,
+                value: _regimenes.any((r) => r.id == _regimenSeleccionado)
+                    ? _regimenSeleccionado
+                    : null,
                 decoration: InputDecoration(
                   labelText: 'Régimen Tributario',
                   hintText: 'Seleccione su régimen',
@@ -758,7 +823,10 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).primaryColor,
+                      width: 2,
+                    ),
                   ),
                   filled: true,
                   fillColor: Colors.grey.shade50,
@@ -769,9 +837,15 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                       color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.account_balance, color: Colors.green),
+                    child: const Icon(
+                      Icons.account_balance,
+                      color: Colors.green,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 isExpanded: true,
                 items: _regimenes.map((regimen) {
@@ -797,12 +871,16 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                     ),
                   );
                 }).toList(),
-                onChanged: (_modoEdicion || _empresaActual == null) ? (value) {
-                  setState(() {
-                    _regimenSeleccionado = value;
-                    _regimenActual = _regimenes.firstWhere((r) => r.id == value);
-                  });
-                } : null,
+                onChanged: (_modoEdicion || _empresaActual == null)
+                    ? (value) {
+                        setState(() {
+                          _regimenSeleccionado = value;
+                          _regimenActual = _regimenes.firstWhere(
+                            (r) => r.id == value,
+                          );
+                        });
+                      }
+                    : null,
                 validator: (value) {
                   if (value == null) {
                     return 'Seleccione un régimen tributario';
@@ -849,7 +927,9 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                 child: Column(
                   children: [
                     _buildHeader(),
-                    if (_regimenActual != null && !_modoEdicion && _empresaActual != null)
+                    if (_regimenActual != null &&
+                        !_modoEdicion &&
+                        _empresaActual != null)
                       _buildRegimenInfo(),
                     _buildFormulario(),
                     _buildActionButtons(),
@@ -863,7 +943,7 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
 
   Widget _buildActionButtons() {
     if (!_modoEdicion && _empresaActual != null) return const SizedBox.shrink();
-    
+
     return Container(
       margin: const EdgeInsets.all(20),
       child: Row(
@@ -876,7 +956,8 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
                     _modoEdicion = false;
                     // Restaurar valores originales
                     if (_empresaActual != null) {
-                      _nombreController.text = _empresaActual!.nombreRazonSocial;
+                      _nombreController.text =
+                          _empresaActual!.nombreRazonSocial;
                       _rucController.text = _empresaActual!.ruc;
                       _imagenPerfilPath = _empresaActual!.imagenPerfil;
                       _regimenSeleccionado = _empresaActual!.regimenId;
@@ -904,7 +985,9 @@ class _PerfilUsuarioScreenState extends State<PerfilUsuarioScreen> {
             child: ElevatedButton.icon(
               onPressed: _guardarPerfil,
               icon: Icon(_empresaActual == null ? Icons.save : Icons.update),
-              label: Text(_empresaActual == null ? 'Crear Perfil' : 'Guardar Cambios'),
+              label: Text(
+                _empresaActual == null ? 'Crear Perfil' : 'Guardar Cambios',
+              ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Theme.of(context).primaryColor,
                 foregroundColor: Colors.white,

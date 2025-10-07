@@ -3,7 +3,6 @@ import 'database_service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class HistorialIGVService {
-  
   // Crear tabla si no existe
   static Future<void> _crearTabla() async {
     final dbService = DatabaseService();
@@ -38,7 +37,7 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     await db.insert(
       'historial_igv',
       historial.toMap(),
@@ -51,9 +50,9 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
-      'historial_igv', 
+      'historial_igv',
       orderBy: 'fechaCalculo DESC',
       limit: 1,
     );
@@ -61,7 +60,7 @@ class HistorialIGVService {
     if (maps.isNotEmpty) {
       return maps.first['saldoResultante']?.toDouble() ?? 0.0;
     }
-    
+
     return 0.0;
   }
 
@@ -70,7 +69,7 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
       'historial_igv',
       orderBy: 'fechaCalculo DESC',
@@ -89,7 +88,7 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
       'historial_igv',
       where: 'fechaCalculo >= ? AND fechaCalculo <= ?',
@@ -107,7 +106,7 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     // Obtener los últimos 5 cálculos
     final List<Map<String, dynamic>> maps = await db.query(
       'historial_igv',
@@ -153,12 +152,27 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
-    await db.delete(
+
+    // Verificar si el registro existe antes de eliminar
+    final existingRecords = await db.query(
       'historial_igv',
       where: 'id = ?',
       whereArgs: [id],
     );
+
+    if (existingRecords.isEmpty) {
+      throw Exception('No se encontró el cálculo con ID: $id');
+    }
+
+    final deletedRows = await db.delete(
+      'historial_igv',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (deletedRows == 0) {
+      throw Exception('No se pudo eliminar el cálculo');
+    }
   }
 
   // Obtener estadísticas mensuales
@@ -166,11 +180,11 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     final ahora = DateTime.now();
     final inicioMes = DateTime(ahora.year, ahora.month, 1);
     final finMes = DateTime(ahora.year, ahora.month + 1, 0, 23, 59, 59);
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
       'historial_igv',
       where: 'fechaCalculo >= ? AND fechaCalculo <= ?',
@@ -223,7 +237,7 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     await db.delete('historial_igv');
   }
 
@@ -232,7 +246,7 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
       'historial_igv',
       orderBy: 'fechaCalculo DESC',
@@ -242,7 +256,7 @@ class HistorialIGVService {
     if (maps.isNotEmpty) {
       return HistorialIGV.fromMap(maps.first);
     }
-    
+
     return null;
   }
 
@@ -251,7 +265,7 @@ class HistorialIGVService {
     await _crearTabla();
     final dbService = DatabaseService();
     final db = await dbService.database;
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
       'historial_igv',
       columns: ['ventasGravadas'],
@@ -262,7 +276,7 @@ class HistorialIGVService {
     if (maps.isNotEmpty) {
       return maps.first['ventasGravadas']?.toDouble() ?? 0.0;
     }
-    
+
     return 0.0;
   }
 }

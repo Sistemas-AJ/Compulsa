@@ -13,15 +13,15 @@ class _DeclaracionFormScreenState extends State<DeclaracionFormScreen> {
   String _empresaSeleccionada = 'ABC Consultores S.A.C.';
   String _tipoDeclaracion = 'IGV';
   String _periodoSeleccionado = 'Octubre 2024';
-  
+
   final List<String> _empresas = [
     'ABC Consultores S.A.C.',
     'Juan Pérez Contadores',
     'Servicios Tributarios S.R.L.',
   ];
-  
+
   final List<String> _tipos = ['IGV', 'Renta'];
-  
+
   final List<String> _periodos = [
     'Octubre 2024',
     'Septiembre 2024',
@@ -54,9 +54,7 @@ class _DeclaracionFormScreenState extends State<DeclaracionFormScreen> {
               const SizedBox(height: 24),
               DropdownButtonFormField<String>(
                 initialValue: _empresaSeleccionada,
-                decoration: const InputDecoration(
-                  labelText: 'Empresa',
-                ),
+                decoration: const InputDecoration(labelText: 'Empresa'),
                 items: _empresas.map((String empresa) {
                   return DropdownMenuItem<String>(
                     value: empresa,
@@ -90,9 +88,7 @@ class _DeclaracionFormScreenState extends State<DeclaracionFormScreen> {
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 initialValue: _periodoSeleccionado,
-                decoration: const InputDecoration(
-                  labelText: 'Período',
-                ),
+                decoration: const InputDecoration(labelText: 'Período'),
                 items: _periodos.map((String periodo) {
                   return DropdownMenuItem<String>(
                     value: periodo,
@@ -143,7 +139,7 @@ class _DeclaracionFormScreenState extends State<DeclaracionFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildResumenItem(String label, String valor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -151,10 +147,7 @@ class _DeclaracionFormScreenState extends State<DeclaracionFormScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
+            style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
           ),
           const SizedBox(width: 8),
           Text(
@@ -169,7 +162,7 @@ class _DeclaracionFormScreenState extends State<DeclaracionFormScreen> {
       ),
     );
   }
-  
+
   void _generarDeclaracion() {
     if (_formKey.currentState!.validate()) {
       // TODO: Generar declaración

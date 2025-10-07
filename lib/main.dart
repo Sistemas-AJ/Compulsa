@@ -11,7 +11,7 @@ void main() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
-  
+
   runApp(const CompulsaApp());
 }
 
@@ -24,7 +24,8 @@ class CompulsaApp extends StatelessWidget {
       title: 'Compulsa - Asistente Tributario',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.lightTheme, // Usar tema claro también para el modo oscuro
+      darkTheme:
+          AppTheme.lightTheme, // Usar tema claro también para el modo oscuro
       themeMode: ThemeMode.light, // Forzar siempre el tema claro
       initialRoute: AppRoutes.home,
       routes: AppRoutes.routes,

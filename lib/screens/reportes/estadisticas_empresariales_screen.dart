@@ -7,10 +7,12 @@ class EstadisticasEmpresarialesScreen extends StatefulWidget {
   const EstadisticasEmpresarialesScreen({super.key});
 
   @override
-  State<EstadisticasEmpresarialesScreen> createState() => _EstadisticasEmpresarialesScreenState();
+  State<EstadisticasEmpresarialesScreen> createState() =>
+      _EstadisticasEmpresarialesScreenState();
 }
 
-class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresarialesScreen>
+class _EstadisticasEmpresarialesScreenState
+    extends State<EstadisticasEmpresarialesScreen>
     with TickerProviderStateMixin {
   List<HistorialIGV> _historialIGV = [];
   Map<String, dynamic> _estadisticasMensuales = {};
@@ -41,8 +43,9 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
   Future<void> _cargarDatos() async {
     try {
       final historial = await HistorialIGVService.obtenerTodosLosCalculos();
-      final estadisticas = await HistorialIGVService.obtenerEstadisticasMensuales();
-      
+      final estadisticas =
+          await HistorialIGVService.obtenerEstadisticasMensuales();
+
       if (mounted) {
         setState(() {
           _historialIGV = historial;
@@ -118,7 +121,9 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
     final totalVentas = _estadisticasMensuales['total_ventas'] ?? 0.0;
     final totalCalculos = _estadisticasMensuales['total_calculos'] ?? 0;
     final totalIgvPagado = _estadisticasMensuales['total_igv_pagado'] ?? 0.0;
-    final promedioVentas = totalCalculos > 0 ? totalVentas / totalCalculos : 0.0;
+    final promedioVentas = totalCalculos > 0
+        ? totalVentas / totalCalculos
+        : 0.0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,7 +188,13 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
     );
   }
 
-  Widget _buildKPICard(String titulo, String valor, IconData icono, Color color, String subtitulo) {
+  Widget _buildKPICard(
+    String titulo,
+    String valor,
+    IconData icono,
+    Color color,
+    String subtitulo,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -269,7 +280,11 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                   color: Colors.green.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.bar_chart, color: Colors.green, size: 20),
+                child: const Icon(
+                  Icons.bar_chart,
+                  color: Colors.green,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -286,10 +301,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                     ),
                     Text(
                       'Últimas operaciones registradas',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -331,7 +343,11 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                   color: AppColors.igvColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.receipt_long, color: AppColors.igvColor, size: 20),
+                child: const Icon(
+                  Icons.receipt_long,
+                  color: AppColors.igvColor,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -348,10 +364,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                     ),
                     Text(
                       'IGV pagado vs Saldos a favor',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
@@ -386,14 +399,14 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
     }
 
     final maxValue = data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: data.asMap().entries.map((entry) {
         final index = entry.key;
         final item = entry.value;
-        final height = maxValue > 0 ? (item.value / maxValue) * 160 : 0.0;
-        
+        final height = maxValue > 0 ? (item.value / maxValue) * 120 : 0.0;
+
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -403,7 +416,10 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                 // Valor
                 if (item.value > 0)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(4),
@@ -411,13 +427,13 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                     child: Text(
                       'S/ ${_formatMonto(item.value)}',
                       style: TextStyle(
-                        fontSize: 8,
+                        fontSize: 7,
                         fontWeight: FontWeight.w600,
                         color: color,
                       ),
                     ),
                   ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 // Barra
                 AnimatedContainer(
                   duration: Duration(milliseconds: 500 + (index * 100)),
@@ -427,24 +443,32 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
-                      colors: [
-                        color,
-                        color.withOpacity(0.7),
-                      ],
+                      colors: [color, color.withOpacity(0.7)],
                     ),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(4),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.2),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 // Etiqueta
                 Text(
                   item.label,
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -456,10 +480,14 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
 
   Widget _buildRentabilidadSection() {
     final totalVentas = _estadisticasMensuales['total_ventas'] ?? 0.0;
-    final totalCompras = _estadisticasMensuales['total_compras_18'] ?? 0.0 + 
-                         _estadisticasMensuales['total_compras_10'] ?? 0.0;
+    final totalCompras =
+        _estadisticasMensuales['total_compras_18'] ??
+        0.0 + _estadisticasMensuales['total_compras_10'] ??
+        0.0;
     final margenBruto = totalVentas - totalCompras;
-    final porcentajeMargen = totalVentas > 0 ? (margenBruto / totalVentas) * 100 : 0.0;
+    final porcentajeMargen = totalVentas > 0
+        ? (margenBruto / totalVentas) * 100
+        : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -485,7 +513,11 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                   color: Colors.blue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.trending_up, color: Colors.blue, size: 20),
+                child: const Icon(
+                  Icons.trending_up,
+                  color: Colors.blue,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -526,9 +558,15 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: margenBruto >= 0 
-                    ? [Colors.green.withOpacity(0.1), Colors.green.withOpacity(0.05)]
-                    : [Colors.red.withOpacity(0.1), Colors.red.withOpacity(0.05)],
+                colors: margenBruto >= 0
+                    ? [
+                        Colors.green.withOpacity(0.1),
+                        Colors.green.withOpacity(0.05),
+                      ]
+                    : [
+                        Colors.red.withOpacity(0.1),
+                        Colors.red.withOpacity(0.05),
+                      ],
               ),
               borderRadius: BorderRadius.circular(12),
             ),
@@ -542,7 +580,9 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: margenBruto >= 0 ? Colors.green[700] : Colors.red[700],
+                        color: margenBruto >= 0
+                            ? Colors.green[700]
+                            : Colors.red[700],
                       ),
                     ),
                     Text(
@@ -550,7 +590,9 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: margenBruto >= 0 ? Colors.green[700] : Colors.red[700],
+                        color: margenBruto >= 0
+                            ? Colors.green[700]
+                            : Colors.red[700],
                       ),
                     ),
                   ],
@@ -561,17 +603,16 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                   children: [
                     Text(
                       'Porcentaje de Margen',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     Text(
                       '${porcentajeMargen.toStringAsFixed(1)}%',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: margenBruto >= 0 ? Colors.green[700] : Colors.red[700],
+                        color: margenBruto >= 0
+                            ? Colors.green[700]
+                            : Colors.red[700],
                       ),
                     ),
                   ],
@@ -584,7 +625,12 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
     );
   }
 
-  Widget _buildRentabilidadItem(String titulo, double valor, Color color, IconData icono) {
+  Widget _buildRentabilidadItem(
+    String titulo,
+    double valor,
+    Color color,
+    IconData icono,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -608,10 +654,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
           const SizedBox(height: 4),
           Text(
             titulo,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -644,7 +687,11 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                   color: AppColors.secondary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.show_chart, color: AppColors.secondary, size: 20),
+                child: const Icon(
+                  Icons.show_chart,
+                  color: AppColors.secondary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -706,10 +753,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            colorEstado.withOpacity(0.1),
-            colorEstado.withOpacity(0.05),
-          ],
+          colors: [colorEstado.withOpacity(0.1), colorEstado.withOpacity(0.05)],
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: colorEstado.withOpacity(0.3)),
@@ -740,10 +784,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                 const SizedBox(height: 4),
                 Text(
                   mensaje,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -778,7 +819,11 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                   color: Colors.purple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.compare_arrows, color: Colors.purple, size: 20),
+                child: const Icon(
+                  Icons.compare_arrows,
+                  color: Colors.purple,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               const Expanded(
@@ -820,7 +865,13 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
     );
   }
 
-  Widget _buildComparativaItem(String titulo, String valor, String subtitulo, IconData icono, Color color) {
+  Widget _buildComparativaItem(
+    String titulo,
+    String valor,
+    String subtitulo,
+    IconData icono,
+    Color color,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -847,10 +898,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
                 ),
                 Text(
                   subtitulo,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                 ),
               ],
             ),
@@ -870,7 +918,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
 
   List<ChartData> _getVentasData() {
     if (_historialIGV.isEmpty) return [];
-    
+
     // Tomar los últimos 6 cálculos para el gráfico
     final ultimos = _historialIGV.take(6).toList().reversed.toList();
     return ultimos.asMap().entries.map((entry) {
@@ -882,7 +930,7 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
 
   List<ChartData> _getIgvData() {
     if (_historialIGV.isEmpty) return [];
-    
+
     // Tomar los últimos 6 cálculos para el gráfico
     final ultimos = _historialIGV.take(6).toList().reversed.toList();
     return ultimos.asMap().entries.map((entry) {
@@ -894,10 +942,12 @@ class _EstadisticasEmpresarialesScreenState extends State<EstadisticasEmpresaria
   }
 
   String _formatMonto(double monto) {
-    return monto.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
+    return monto
+        .toStringAsFixed(0)
+        .replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
   }
 }
 

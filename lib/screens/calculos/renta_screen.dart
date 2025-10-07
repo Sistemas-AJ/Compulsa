@@ -19,6 +19,11 @@ class _RentaScreenState extends State<RentaScreen> {
   final _gastosController = TextEditingController();
   final _coeficienteController = TextEditingController();
   
+  // Nuevos controladores para cálculo de coeficiente
+  final _impuesto2023Controller = TextEditingController();
+  final _ingresos2023Controller = TextEditingController();
+  double? _coeficienteCalculado;
+  
   int? _regimenSeleccionado;
   Map<String, dynamic>? _resultadoCalculo;
   bool _isCalculating = false;
@@ -58,6 +63,39 @@ class _RentaScreenState extends State<RentaScreen> {
           SnackBar(content: Text('Error al cargar regímenes: $e')),
         );
       }
+    }
+  }
+
+  // Función para calcular coeficiente automáticamente
+  void _calcularCoeficienteAutomatico() {
+    final impuesto2023 = double.tryParse(_impuesto2023Controller.text) ?? 0.0;
+    final ingresos2023 = double.tryParse(_ingresos2023Controller.text) ?? 0.0;
+    
+    if (impuesto2023 > 0 && ingresos2023 > 0) {
+      final coeficiente = impuesto2023 / ingresos2023;
+      setState(() {
+        _coeficienteCalculado = coeficiente;
+        // Actualizar el campo de coeficiente con el resultado
+        _coeficienteController.text = (coeficiente * 100).toStringAsFixed(4);
+      });
+      
+      // Recalcular las opciones MYPE con el nuevo coeficiente
+      if (_opcionesMyPE != null) {
+        final nuevasOpciones = RegimenTributario.calcularTasaMyPE(
+          ingresos: double.tryParse(_ingresosController.text) ?? 0.0,
+          gastosDeducibles: double.tryParse(_gastosController.text) ?? 0.0,
+          coeficientePersonalizado: coeficiente,
+        );
+        setState(() {
+          _opcionesMyPE = nuevasOpciones;
+          _usarCoeficiente = true; // Activar automáticamente el uso del coeficiente
+        });
+      }
+    } else {
+      setState(() {
+        _coeficienteCalculado = null;
+        _coeficienteController.clear();
+      });
     }
   }
 
@@ -774,6 +812,8 @@ class _RentaScreenState extends State<RentaScreen> {
                   }
                 },
               ),
+              const SizedBox(height: 16),
+              _buildCalculadorCoeficiente(),
             ],
           ],
         ),
@@ -941,6 +981,214 @@ class _RentaScreenState extends State<RentaScreen> {
     _ingresosController.dispose();
     _gastosController.dispose();
     _coeficienteController.dispose();
+    _impuesto2023Controller.dispose();
+    _ingresos2023Controller.dispose();
     super.dispose();
+  }
+
+  // Widget para calcular coeficiente basado en datos del año anterior
+  Widget _buildCalculadorCoeficiente() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+        color: AppColors.secondary.withOpacity(0.05),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.calculate_outlined,
+                    size: 18,
+                    color: AppColors.secondary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'Calculadora de Coeficiente',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Calcula automáticamente tu coeficiente usando los datos del año 2023',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Impuesto Calculado año 2023',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextFormField(
+                        controller: _impuesto2023Controller,
+                        decoration: const InputDecoration(
+                          hintText: '0.00',
+                          prefixText: 'S/ ',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        onChanged: (value) => _calcularCoeficienteAutomatico(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Ingresos Netos año 2023',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      TextFormField(
+                        controller: _ingresos2023Controller,
+                        decoration: const InputDecoration(
+                          hintText: '0.00',
+                          prefixText: 'S/ ',
+                          border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        onChanged: (value) => _calcularCoeficienteAutomatico(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            if (_coeficienteCalculado != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.success,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Coeficiente Calculado',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            '${(_coeficienteCalculado! * 100).toStringAsFixed(4)}%',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.success,
+                            ),
+                          ),
+                          Text(
+                            'Fórmula: ${_impuesto2023Controller.text} ÷ ${_ingresos2023Controller.text}',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 14,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    'El coeficiente se aplicará automáticamente al campo de coeficiente personalizado',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

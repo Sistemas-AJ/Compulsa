@@ -1,8 +1,10 @@
 import '../core/constants/api_config.dart';
 import 'database_service.dart';
 import '../models/historial_igv.dart';
+import '../models/historial_renta.dart';
 import '../models/regimen_tributario.dart';
 import 'historial_igv_service.dart';
+import 'historial_renta_service.dart';
 
 class CalculoService {
   static const double _igvRate = 0.18; // 18%
@@ -26,13 +28,13 @@ class CalculoService {
     final double igvCompras18 = compras18 * _igvRate; // IGV de compras al 18%
     final double igvCompras10 = compras10 * 0.10; // IGV de compras al 10%
     final double totalIgvCompras = igvCompras18 + igvCompras10;
-    
+
     // Cálculo del IGV (IGV Ventas - IGV Compras)
     final double calculoIgv = igvVentas - totalIgvCompras;
-    
+
     // IGV por cancelar considerando saldo anterior
     final double igvPorCancelar = calculoIgv - saldoAnterior;
-    
+
     // Determinar si hay saldo a favor o IGV por pagar
     final bool tieneSaldoAFavor = igvPorCancelar < 0;
     final double saldoAFavor = tieneSaldoAFavor ? igvPorCancelar.abs() : 0.0;
@@ -63,27 +65,30 @@ class CalculoService {
     double compras10 = 0.0,
     double saldoAnterior = 0.0,
     required dynamic tipoNegocio, // Acepta el enum del screen
-    bool guardarEnHistorial = true, // Nuevo parámetro para controlar si se guarda
+    bool guardarEnHistorial =
+        true, // Nuevo parámetro para controlar si se guarda
   }) async {
     // Simular llamada asíncrona
     await Future.delayed(AppConfig.simulatedDelay);
 
     // Determinar la tasa de IGV según el tipo de negocio
-    final bool esRestauranteHotel = tipoNegocio.toString().contains('restauranteHotel');
+    final bool esRestauranteHotel = tipoNegocio.toString().contains(
+      'restauranteHotel',
+    );
     final double tasaVentas = esRestauranteHotel ? 0.10 : _igvRate;
-    
+
     // Calcular IGV según el tipo de negocio
     final double igvVentas = ventasGravadas * tasaVentas;
     final double igvCompras18 = compras18 * _igvRate;
     final double igvCompras10 = compras10 * 0.10;
     final double totalIgvCompras = igvCompras18 + igvCompras10;
-    
+
     // Cálculo del IGV (IGV Ventas - IGV Compras)
     final double calculoIgv = igvVentas - totalIgvCompras;
-    
+
     // IGV por cancelar considerando saldo anterior
     final double igvPorCancelar = calculoIgv - saldoAnterior;
-    
+
     // Determinar si hay saldo a favor o IGV por pagar
     final bool tieneSaldoAFavor = igvPorCancelar < 0;
     final double saldoAFavor = tieneSaldoAFavor ? igvPorCancelar.abs() : 0.0;
@@ -111,11 +116,14 @@ class CalculoService {
     // Guardar en historial si está habilitado
     if (guardarEnHistorial) {
       try {
-        final tipoNegocioStr = esRestauranteHotel ? 'restaurante_hotel' : 'general';
+        final tipoNegocioStr = esRestauranteHotel
+            ? 'restaurante_hotel'
+            : 'general';
         final historial = HistorialIGV.fromCalculoResult(
           calculoResult: resultado,
           tipoNegocio: tipoNegocioStr,
-          observaciones: 'Cálculo automático desde ${resultado['tipo_negocio']}',
+          observaciones:
+              'Cálculo automático desde ${resultado['tipo_negocio']}',
         );
         await HistorialIGVService.guardarCalculo(historial);
       } catch (e) {
@@ -146,10 +154,11 @@ class CalculoService {
     // 🎯 Determinar el régimen enum basado en el nombre
     RegimenTributarioEnum regimenEnum;
     final nombreRegimen = regimen.nombre.toUpperCase();
-    
+
     if (nombreRegimen.contains('NRUS') || nombreRegimen.contains('RUS')) {
       regimenEnum = RegimenTributarioEnum.rus;
-    } else if (nombreRegimen.contains('RER') || nombreRegimen.contains('ESPECIAL')) {
+    } else if (nombreRegimen.contains('RER') ||
+        nombreRegimen.contains('ESPECIAL')) {
       regimenEnum = RegimenTributarioEnum.especial;
     } else if (nombreRegimen.contains('MYPE')) {
       regimenEnum = RegimenTributarioEnum.mype;
@@ -172,7 +181,7 @@ class CalculoService {
     // 🧮 Calcular valores base
     final double rentaNeta = ingresos - gastos;
     final double tasaPorcentaje = tasaCalculada * 100;
-    
+
     double baseImponible;
     double impuestoRenta;
     String tipoCalculo;
@@ -185,45 +194,51 @@ class CalculoService {
         impuestoRenta = 0.0;
         tipoCalculo = 'RUS - Sin impuesto a la renta';
         break;
-        
+
       case RegimenTributarioEnum.especial:
         // RER: 1.0% sobre ingresos brutos
         if (nombreRegimen.contains('RER')) {
           baseImponible = ingresos;
           impuestoRenta = ingresos * tasaCalculada;
-          tipoCalculo = 'RER - ${tasaPorcentaje.toStringAsFixed(1)}% sobre ingresos brutos';
+          tipoCalculo =
+              'RER - ${tasaPorcentaje.toStringAsFixed(1)}% sobre ingresos brutos';
         } else {
           // Régimen Especial: 1.5% sobre renta neta
           baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
           impuestoRenta = rentaNeta > 0 ? rentaNeta * tasaCalculada : 0.0;
-          tipoCalculo = 'Especial - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
+          tipoCalculo =
+              'Especial - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
         }
         break;
-        
+
       case RegimenTributarioEnum.mype:
         // MYPE: Lógica especial según el monto de ingresos
         if (ingresos <= RegimenTributario.limiteMyeBasico) {
           // Tasa básica del 1% sobre ingresos
           baseImponible = ingresos;
           impuestoRenta = ingresos * tasaCalculada;
-          tipoCalculo = 'MYPE - ${tasaPorcentaje.toStringAsFixed(1)}% sobre ingresos (≤ S/ ${RegimenTributario.limiteMyeBasico.toStringAsFixed(0)})';
+          tipoCalculo =
+              'MYPE - ${tasaPorcentaje.toStringAsFixed(1)}% sobre ingresos (≤ S/ ${RegimenTributario.limiteMyeBasico.toStringAsFixed(0)})';
         } else {
           // Tasa variable sobre renta neta
           baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
           impuestoRenta = rentaNeta > 0 ? rentaNeta * tasaCalculada : 0.0;
           if (coeficientePersonalizado != null && usarCoeficiente) {
-            tipoCalculo = 'MYPE - Coeficiente ${tasaPorcentaje.toStringAsFixed(2)}% sobre renta neta';
+            tipoCalculo =
+                'MYPE - Coeficiente ${tasaPorcentaje.toStringAsFixed(2)}% sobre renta neta';
           } else {
-            tipoCalculo = 'MYPE - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
+            tipoCalculo =
+                'MYPE - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
           }
         }
         break;
-        
+
       case RegimenTributarioEnum.general:
         // Régimen General: 1.5% sobre renta neta
         baseImponible = rentaNeta > 0 ? rentaNeta : 0.0;
         impuestoRenta = rentaNeta > 0 ? rentaNeta * tasaCalculada : 0.0;
-        tipoCalculo = 'General - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
+        tipoCalculo =
+            'General - ${tasaPorcentaje.toStringAsFixed(1)}% sobre renta neta';
         break;
     }
 
@@ -242,7 +257,7 @@ class CalculoService {
       detalleCalculo = null;
     }
 
-    return {
+    final resultado = {
       'ingresos': ingresos,
       'gastos': gastos,
       'renta_neta': rentaNeta,
@@ -264,6 +279,20 @@ class CalculoService {
       'usando_coeficiente': usarCoeficiente,
       'metodo_calculo': 'funcion_optimizada_v2',
     };
+
+    // 💾 Guardar en historial (similar al IGV)
+    try {
+      final historial = HistorialRenta.fromCalculoResult(
+        calculoResult: resultado,
+        observaciones: 'Cálculo automático desde ${regimenEnum.nombre}',
+      );
+      await HistorialRentaService.guardarCalculo(historial);
+    } catch (e) {
+      // En caso de error al guardar, no afectar el cálculo
+      print('Error al guardar en historial de renta: $e');
+    }
+
+    return resultado;
   }
 
   static Future<Map<String, dynamic>> calcularLiquidacion({
@@ -292,7 +321,9 @@ class CalculoService {
     return {
       'igv': igv,
       'renta': renta,
-      'total_por_pagar': (igv['igv_por_pagar'] as double) + (renta['renta_por_pagar'] as double),
+      'total_por_pagar':
+          (igv['igv_por_pagar'] as double) +
+          (renta['renta_por_pagar'] as double),
       'fecha_calculo': DateTime.now().toIso8601String(),
     };
   }

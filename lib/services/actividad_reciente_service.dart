@@ -16,7 +16,9 @@ class ActividadRecienteService {
   }
 
   /// Obtiene las actividades recientes
-  static Future<List<ActividadReciente>> obtenerActividades({int limite = 10}) async {
+  static Future<List<ActividadReciente>> obtenerActividades({
+    int limite = 10,
+  }) async {
     try {
       return await _database.obtenerActividadesRecientes(limite: limite);
     } catch (e) {

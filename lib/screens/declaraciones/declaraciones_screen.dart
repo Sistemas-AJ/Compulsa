@@ -25,7 +25,7 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
 
   Future<void> _cargarDeclaraciones() async {
     setState(() => _cargando = true);
-    
+
     try {
       final declaraciones = await _declaracionService.obtenerDeclaraciones();
       setState(() {
@@ -111,10 +111,7 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
           const SizedBox(height: 8),
           Text(
             'Crea tu primera declaración tocando el botón +',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
             textAlign: TextAlign.center,
           ),
         ],
@@ -123,10 +120,10 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
   }
 
   Widget _buildDeclaracionCard(Declaracion declaracion) {
-    final tipoColor = declaracion.tipo == TipoDeclaracion.igv 
-        ? AppColors.igvColor 
+    final tipoColor = declaracion.tipo == TipoDeclaracion.igv
+        ? AppColors.igvColor
         : AppColors.rentaColor;
-    
+
     final estadoColor = _getEstadoColor(declaracion.estado);
     final estadoText = _getEstadoText(declaracion.estado);
 
@@ -142,7 +139,10 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: tipoColor,
                     borderRadius: BorderRadius.circular(20),
@@ -158,10 +158,15 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: estadoColor.withValues(alpha: 0.1),
-                    border: Border.all(color: estadoColor.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: estadoColor.withValues(alpha: 0.3),
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -196,14 +201,15 @@ class _DeclaracionesScreenState extends State<DeclaracionesScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.calendar_today, size: 16, color: Colors.grey.shade600),
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: Colors.grey.shade600,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   'Creado: ${DateFormat('dd/MM/yyyy').format(declaracion.fechaCreacion)}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
               ],
             ),

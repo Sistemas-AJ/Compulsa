@@ -10,9 +10,7 @@ class CalculosScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CompulsaAppBar(
-        title: 'Cálculos Tributarios',
-      ),
+      appBar: const CompulsaAppBar(title: 'Cálculos Tributarios'),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -58,34 +56,43 @@ class CalculosScreen extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildResumenCard() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            _buildResumenItem('IGV por Pagar', 'S/ 2,456.80', AppColors.igvColor),
+            _buildResumenItem(
+              'IGV por Pagar',
+              'S/ 2,456.80',
+              AppColors.igvColor,
+            ),
             const Divider(),
-            _buildResumenItem('Renta por Pagar', 'S/ 1,234.50', AppColors.rentaColor),
+            _buildResumenItem(
+              'Renta por Pagar',
+              'S/ 1,234.50',
+              AppColors.rentaColor,
+            ),
             const Divider(),
-            _buildResumenItem('Saldo a Favor', 'S/ 345.20', AppColors.saldoFavorColor),
+            _buildResumenItem(
+              'Saldo a Favor',
+              'S/ 345.20',
+              AppColors.saldoFavorColor,
+            ),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildResumenItem(String label, String valor, Color color) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         Text(
           valor,

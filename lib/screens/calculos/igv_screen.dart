@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/calculo_service.dart';
@@ -15,11 +15,13 @@ class IgvScreen extends StatefulWidget {
 enum TipoNegocio { general, restauranteHotel }
 
 class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
-  final TextEditingController _ventasGravadasController = TextEditingController();
+  final TextEditingController _ventasGravadasController =
+      TextEditingController();
   final TextEditingController _compras18Controller = TextEditingController();
   final TextEditingController _compras10Controller = TextEditingController();
-  final TextEditingController _saldoAnteriorController = TextEditingController();
-  
+  final TextEditingController _saldoAnteriorController =
+      TextEditingController();
+
   TipoNegocio? _tipoNegocioSeleccionado; // Cambiado a nullable
   Map<String, dynamic>? _resultadoCalculo;
   bool _calculando = false;
@@ -46,7 +48,9 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
       final saldoAnterior = await CalculoService.obtenerSaldoAnterior();
       if (mounted) {
         setState(() {
-          _saldoAnteriorController.text = saldoAnterior > 0 ? saldoAnterior.toStringAsFixed(2) : '';
+          _saldoAnteriorController.text = saldoAnterior > 0
+              ? saldoAnterior.toStringAsFixed(2)
+              : '';
         });
       }
     } catch (e) {
@@ -68,7 +72,9 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
   Future<void> _calcularIgv() async {
     if (_tipoNegocioSeleccionado == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor seleccione el tipo de negocio')),
+        const SnackBar(
+          content: Text('Por favor seleccione el tipo de negocio'),
+        ),
       );
       return;
     }
@@ -81,9 +87,14 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
     }
 
     // Validar que se ingrese al menos un tipo de compra
-    if (_compras18Controller.text.isEmpty && _compras10Controller.text.isEmpty) {
+    if (_compras18Controller.text.isEmpty &&
+        _compras10Controller.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingrese al menos un tipo de compras (18% o 10%)')),
+        const SnackBar(
+          content: Text(
+            'Por favor ingrese al menos un tipo de compras (18% o 10%)',
+          ),
+        ),
       );
       return;
     }
@@ -94,9 +105,15 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
 
     try {
       final ventasGravadas = double.parse(_ventasGravadasController.text);
-      final compras18 = _compras18Controller.text.isNotEmpty ? double.parse(_compras18Controller.text) : 0.0;
-      final compras10 = _compras10Controller.text.isNotEmpty ? double.parse(_compras10Controller.text) : 0.0;
-      final saldoAnterior = _saldoAnteriorController.text.isEmpty ? 0.0 : double.parse(_saldoAnteriorController.text);
+      final compras18 = _compras18Controller.text.isNotEmpty
+          ? double.parse(_compras18Controller.text)
+          : 0.0;
+      final compras10 = _compras10Controller.text.isNotEmpty
+          ? double.parse(_compras10Controller.text)
+          : 0.0;
+      final saldoAnterior = _saldoAnteriorController.text.isEmpty
+          ? 0.0
+          : double.parse(_saldoAnteriorController.text);
 
       final resultado = await CalculoService.calcularIgvPorTipo(
         ventasGravadas: ventasGravadas,
@@ -107,27 +124,27 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
       );
 
       if (!mounted) return;
-      
+
       // Registrar actividad reciente
       await ActividadRecienteService.registrarCalculoIGV(
         baseImponible: ventasGravadas,
         igv: resultado['igv_por_pagar'] ?? resultado['saldo_a_favor'] ?? 0.0,
       );
-      
+
       setState(() {
         _resultadoCalculo = resultado;
         _calculando = false;
       });
     } catch (e) {
       if (!mounted) return;
-      
+
       setState(() {
         _calculando = false;
       });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error en el cálculo: $e')),
-      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error en el cálculo: $e')));
     }
   }
 
@@ -135,9 +152,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: const CompulsaAppBar(
-        title: 'Cálculo de IGV',
-      ),
+      appBar: const CompulsaAppBar(title: 'Cálculo de IGV'),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
@@ -214,17 +229,17 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Business Type Selector
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: _buildBusinessTypeSelector(),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Form Section - Solo se muestra si hay tipo seleccionado
             if (_tipoNegocioSeleccionado != null)
               AnimatedBuilder(
@@ -245,7 +260,9 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                             _buildModernFormField(
                               controller: _ventasGravadasController,
                               label: 'Ventas Gravadas',
-                              subtitle: _tipoNegocioSeleccionado == TipoNegocio.general 
+                              subtitle:
+                                  _tipoNegocioSeleccionado ==
+                                      TipoNegocio.general
                                   ? 'Monto base de ventas gravadas (IGV 18%)'
                                   : 'Monto base de ventas gravadas (IGV 10%)',
                               icon: Icons.trending_up,
@@ -253,31 +270,33 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                               isRequired: true,
                             ),
                             const SizedBox(height: 20),
-                            
+
                             // Siempre mostrar ambos campos de compras para cualquier tipo de negocio
                             _buildModernFormField(
                               controller: _compras18Controller,
                               label: 'Compras 18%',
-                              subtitle: 'Monto base de compras con IGV 18% - Opcional',
+                              subtitle:
+                                  'Monto base de compras con IGV 18% - Opcional',
                               icon: Icons.shopping_cart,
                               color: Colors.blue,
                               isRequired: false,
                             ),
                             const SizedBox(height: 20),
-                            
+
                             _buildModernFormField(
                               controller: _compras10Controller,
                               label: 'Compras 10%',
-                              subtitle: 'Monto base de compras con IGV 10% - Opcional',
+                              subtitle:
+                                  'Monto base de compras con IGV 10% - Opcional',
                               icon: Icons.shopping_bag,
                               color: Colors.orange,
                               isRequired: false,
                             ),
                             const SizedBox(height: 20),
-                            
+
                             _buildSaldoAnteriorField(),
                             const SizedBox(height: 32),
-                            
+
                             // Calculate Button
                             Container(
                               width: double.infinity,
@@ -319,9 +338,13 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                                         ),
                                       )
                                     : Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
                                         children: const [
-                                          Icon(Icons.calculate, color: Colors.white),
+                                          Icon(
+                                            Icons.calculate,
+                                            color: Colors.white,
+                                          ),
                                           SizedBox(width: 8),
                                           Text(
                                             'Calcular IGV',
@@ -342,7 +365,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                   );
                 },
               ),
-            
+
             // Mensaje de instrucciones cuando no hay tipo seleccionado
             if (_tipoNegocioSeleccionado == null)
               Padding(
@@ -389,11 +412,11 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                   ),
                 ),
               ),
-            
+
             const SizedBox(height: 24),
-            
+
             if (_resultadoCalculo != null) _buildProfessionalResultCard(),
-            
+
             const SizedBox(height: 32),
           ],
         ),
@@ -463,10 +486,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -508,7 +528,10 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                 ),
                 filled: true,
                 fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
+                ),
               ),
             ),
           ],
@@ -519,7 +542,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
 
   Widget _buildProfessionalResultCard() {
     final resultado = _resultadoCalculo!;
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Container(
@@ -548,7 +571,9 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
+                ),
               ),
               child: Row(
                 children: [
@@ -590,7 +615,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                 ],
               ),
             ),
-            
+
             // Content
             Padding(
               padding: const EdgeInsets.all(24),
@@ -618,208 +643,267 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                       ),
                     ],
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Detailed Table
                   Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey[200]!),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      children: [
-                        // Table Header
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.grey[50],
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: const [
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  'CONCEPTO',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: Colors.black87,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  'BASE',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: Colors.black87,
-                                    letterSpacing: 0.5,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Expanded(
-                                child: Text(
-                                  'IGV',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: Colors.black87,
-                                    letterSpacing: 0.5,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            ],
-                          ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minWidth: MediaQuery.of(context).size.width - 48,
                         ),
-                        
-                        // Table Rows
-                        _buildProfessionalTableRow('VENTAS', resultado['ventas_gravadas'], resultado['igv_ventas'], Colors.green),
-                        _buildProfessionalTableRow('COMPRAS 18%', resultado['compras_18'], resultado['igv_compras_18'], Colors.blue),
-                        if ((resultado['compras_10'] as double) > 0)
-                          _buildProfessionalTableRow('COMPRAS 10%', resultado['compras_10'], resultado['igv_compras_10'], Colors.orange),
-                        
-                        // Calculation Result
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.amber[50],
-                            border: Border(top: BorderSide(color: Colors.grey[200]!)),
-                          ),
-                          child: Row(
+                        child: IntrinsicWidth(
+                          child: Column(
                             children: [
-                              const Expanded(
-                                flex: 3,
-                                child: Text(
-                                  'CÁLCULO DEL IGV',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                              const Expanded(child: SizedBox()),
-                              Expanded(
-                                child: _buildAmountChip(_formatMonto(resultado['calculo_igv']), Colors.amber),
-                              ),
-                            ],
-                          ),
-                        ),
-                        
-                        // Previous Balance
-                        if ((resultado['saldo_anterior'] as double) > 0)
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border(top: BorderSide(color: Colors.grey[200]!)),
-                            ),
-                            child: Row(
-                              children: [
-                                const Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    'SALDO A FAVOR PERÍODO ANTERIOR',
-                                    style: TextStyle(fontSize: 14),
-                                  ),
-                                ),
-                                const Expanded(child: SizedBox()),
-                                Expanded(
-                                  child: _buildAmountChip(_formatMonto(resultado['saldo_anterior']), Colors.purple),
-                                ),
-                              ],
-                            ),
-                          ),
-                        
-                        // Final Result
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: resultado['tiene_saldo_a_favor']
-                                  ? [Colors.red[50]!, Colors.red[100]!]
-                                  : [Colors.green[50]!, Colors.green[100]!],
-                            ),
-                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-                          ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
+                              // Table Header
                               Container(
-                                padding: const EdgeInsets.all(8),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: resultado['tiene_saldo_a_favor']
-                                      ? Colors.red[100]
-                                      : Colors.green[100],
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.grey[50],
+                                  borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(12),
+                                  ),
                                 ),
-                                child: Icon(
-                                  resultado['tiene_saldo_a_favor']
-                                      ? Icons.trending_down
-                                      : Icons.trending_up,
-                                  color: resultado['tiene_saldo_a_favor']
-                                      ? Colors.red[700]
-                                      : Colors.green[700],
-                                  size: 20,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
+                                child: Row(
                                   children: [
-                                    Text(
-                                      resultado['tiene_saldo_a_favor']
-                                          ? 'SALDO A FAVOR'
-                                          : 'IGV POR PAGAR',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: resultado['tiene_saldo_a_favor']
-                                            ? Colors.red[700]
-                                            : Colors.green[700],
+                                    SizedBox(
+                                      width: 120,
+                                      child: Text(
+                                        'CONCEPTO',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                          letterSpacing: 0.5,
+                                        ),
                                       ),
                                     ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      resultado['tiene_saldo_a_favor']
-                                          ? 'Tienes un saldo a favor'
-                                          : 'Monto a pagar este período',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
+                                    SizedBox(
+                                      width: 100,
+                                      child: Text(
+                                        'BASE',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      width: 100,
+                                      child: Text(
+                                        'IGV',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                          color: Colors.black87,
+                                          letterSpacing: 0.5,
+                                        ),
+                                        textAlign: TextAlign.center,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
+
+                              // Table Rows
+                              _buildProfessionalTableRow(
+                                'VENTAS',
+                                resultado['ventas_gravadas'],
+                                resultado['igv_ventas'],
+                                Colors.green,
+                              ),
+                              _buildProfessionalTableRow(
+                                'COMPRAS 18%',
+                                resultado['compras_18'],
+                                resultado['igv_compras_18'],
+                                Colors.blue,
+                              ),
+                              if ((resultado['compras_10'] as double) > 0)
+                                _buildProfessionalTableRow(
+                                  'COMPRAS 10%',
+                                  resultado['compras_10'],
+                                  resultado['igv_compras_10'],
+                                  Colors.orange,
+                                ),
+
+                              // Calculation Result
                               Container(
-                                alignment: Alignment.centerRight,
-                                child: Text(
-                                  'S/. ${resultado['tiene_saldo_a_favor'] 
-                                      ? _formatMonto(resultado['saldo_a_favor']) 
-                                      : _formatMonto(resultado['igv_por_pagar'])}',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: resultado['tiene_saldo_a_favor']
-                                        ? Colors.red[700]
-                                        : Colors.green[700],
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber[50],
+                                  border: Border(
+                                    top: BorderSide(color: Colors.grey[200]!),
                                   ),
-                                  textAlign: TextAlign.right,
+                                ),
+                                child: Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 120,
+                                      child: Text(
+                                        'CÁLCULO DEL IGV',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 100),
+                                    SizedBox(
+                                      width: 100,
+                                      child: Container(
+                                        alignment: Alignment.center,
+                                        child: _buildAmountChip(
+                                          _formatMonto(
+                                            resultado['calculo_igv'],
+                                          ),
+                                          Colors.amber,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Previous Balance
+                              if ((resultado['saldo_anterior'] as double) > 0)
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      top: BorderSide(color: Colors.grey[200]!),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 120,
+                                        child: Text(
+                                          'SALDO ANTERIOR',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
+                                      SizedBox(width: 100),
+                                      SizedBox(
+                                        width: 100,
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          child: _buildAmountChip(
+                                            _formatMonto(
+                                              resultado['saldo_anterior'],
+                                            ),
+                                            Colors.purple,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              // Final Result
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: resultado['tiene_saldo_a_favor']
+                                        ? [Colors.red[50]!, Colors.red[100]!]
+                                        : [
+                                            Colors.green[50]!,
+                                            Colors.green[100]!,
+                                          ],
+                                  ),
+                                  borderRadius: const BorderRadius.vertical(
+                                    bottom: Radius.circular(12),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: resultado['tiene_saldo_a_favor']
+                                            ? Colors.red[100]
+                                            : Colors.green[100],
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Icon(
+                                        resultado['tiene_saldo_a_favor']
+                                            ? Icons.trending_down
+                                            : Icons.trending_up,
+                                        color: resultado['tiene_saldo_a_favor']
+                                            ? Colors.red[700]
+                                            : Colors.green[700],
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            resultado['tiene_saldo_a_favor']
+                                                ? 'SALDO A FAVOR'
+                                                : 'IGV POR PAGAR',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color:
+                                                  resultado['tiene_saldo_a_favor']
+                                                  ? Colors.red[700]
+                                                  : Colors.green[700],
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            resultado['tiene_saldo_a_favor']
+                                                ? 'Tienes un saldo a favor'
+                                                : 'Monto a pagar este período',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        'S/. ${resultado['tiene_saldo_a_favor'] ? _formatMonto(resultado['saldo_a_favor']) : _formatMonto(resultado['igv_por_pagar'])}',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color:
+                                              resultado['tiene_saldo_a_favor']
+                                              ? Colors.red[700]
+                                              : Colors.green[700],
+                                        ),
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ],
@@ -831,8 +915,14 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildSummaryCard(String title, double amount, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    double amount,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
+      height: 120,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withOpacity(0.05),
@@ -841,6 +931,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
@@ -858,13 +949,19 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'S/. ${_formatMonto(amount)}',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
+          Expanded(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'S/. ${_formatMonto(amount)}',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -872,7 +969,12 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildProfessionalTableRow(String concepto, double base, double igv, Color color) {
+  Widget _buildProfessionalTableRow(
+    String concepto,
+    double base,
+    double igv,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -881,8 +983,8 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            flex: 3,
+          SizedBox(
+            width: 120,
             child: Row(
               children: [
                 Container(
@@ -894,33 +996,39 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Flexible(
+                Expanded(
                   child: Text(
                     concepto,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
                   ),
                 ),
               ],
             ),
           ),
-          Expanded(
+          SizedBox(
+            width: 100,
             child: Container(
               alignment: Alignment.center,
-              child: Text(
-                base > 0 ? _formatMonto(base) : '-',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  base > 0 ? _formatMonto(base) : '-',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
               ),
             ),
           ),
-          Expanded(
+          SizedBox(
+            width: 100,
             child: Container(
               alignment: Alignment.center,
               child: _buildAmountChip(_formatMonto(igv), color),
@@ -932,24 +1040,28 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
   }
 
   Widget _buildAmountChip(String amount, Color color) {
-    return Align(
-      alignment: Alignment.center,
-      child: Container(
-        constraints: const BoxConstraints(minWidth: 80),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Text(
-          amount,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: color,
+    return Container(
+      width: 90,
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            amount,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
           ),
-          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -981,7 +1093,11 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                     color: AppColors.primary.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.business, color: AppColors.primary, size: 20),
+                  child: Icon(
+                    Icons.business,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 const Expanded(
@@ -999,10 +1115,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                       SizedBox(height: 2),
                       Text(
                         'Seleccione el tipo de negocio para aplicar la tasa de IGV correcta en ventas',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ],
                   ),
@@ -1047,18 +1160,18 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
     Color color,
   ) {
     final isSelected = _tipoNegocioSeleccionado == tipo;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
           final bool esPrimerSeleccion = _tipoNegocioSeleccionado == null;
           _tipoNegocioSeleccionado = tipo;
-          
+
           // Solo limpiar ventas y resultado al cambiar tipo de negocio
           // Las compras y saldo anterior se mantienen
           _ventasGravadasController.clear();
           _resultadoCalculo = null;
-          
+
           // Activar animación si es la primera selección
           if (esPrimerSeleccion) {
             _formAnimationController.forward();
@@ -1078,11 +1191,7 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
         ),
         child: Column(
           children: [
-            Icon(
-              icono,
-              color: isSelected ? color : Colors.grey[600],
-              size: 24,
-            ),
+            Icon(icono, color: isSelected ? color : Colors.grey[600], size: 24),
             const SizedBox(height: 8),
             Text(
               titulo,
@@ -1110,10 +1219,38 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
   }
 
   String _formatMonto(double monto) {
-    return monto.toStringAsFixed(0).replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
+    // Validar que el número sea válido
+    if (monto.isNaN || monto.isInfinite) {
+      return '0';
+    }
+
+    // Para números muy grandes (más de 100 millones), usar formato compacto
+    if (monto.abs() >= 100000000) {
+      double millones = monto / 1000000;
+      String formatted = millones.toStringAsFixed(millones % 1 == 0 ? 0 : 1);
+      return '${formatted}M';
+    }
+    // Para números grandes (más de 10 millones), usar formato compacto
+    else if (monto.abs() >= 10000000) {
+      double millones = monto / 1000000;
+      String formatted = millones.toStringAsFixed(1);
+      return '${formatted}M';
+    }
+    // Para números medianos (más de 100,000), usar formato compacto
+    else if (monto.abs() >= 100000) {
+      double miles = monto / 1000;
+      String formatted = miles.toStringAsFixed(miles % 1 == 0 ? 0 : 1);
+      return '${formatted}K';
+    }
+    // Para números normales, mostrar con separadores de miles
+    else {
+      return monto
+          .toStringAsFixed(0)
+          .replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]},',
+          );
+    }
   }
 
   // Crear campo especial para saldo anterior con información adicional
@@ -1160,7 +1297,9 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          _saldoAnteriorController.text.isNotEmpty && double.parse(_saldoAnteriorController.text) > 0
+                          _saldoAnteriorController.text.isNotEmpty &&
+                                  double.parse(_saldoAnteriorController.text) >
+                                      0
                               ? 'Saldo a favor del último cálculo: S/ ${_saldoAnteriorController.text}'
                               : 'No hay saldo anterior disponible',
                           style: TextStyle(
@@ -1184,7 +1323,11 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.clear, color: Colors.red, size: 20),
+                      icon: const Icon(
+                        Icons.clear,
+                        color: Colors.red,
+                        size: 20,
+                      ),
                       tooltip: 'Limpiar saldo anterior',
                     ),
                 ],
@@ -1201,17 +1344,27 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
                   prefixText: 'S/ ',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.purple.withOpacity(0.3)),
+                    borderSide: BorderSide(
+                      color: Colors.purple.withOpacity(0.3),
+                    ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(color: Colors.purple.withOpacity(0.3)),
+                    borderSide: BorderSide(
+                      color: Colors.purple.withOpacity(0.3),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Colors.purple, width: 2),
+                    borderSide: const BorderSide(
+                      color: Colors.purple,
+                      width: 2,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 16,
+                  ),
                 ),
                 onChanged: (value) {
                   setState(() {

@@ -1,32 +1,116 @@
 import 'package:flutter/material.dart';
 import '../../config/routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/historial_igv_service.dart';
+import '../../services/historial_renta_service.dart';
 import '../../widgets/compulsa_appbar.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  double _ultimoIGV = 0.0;
+  double _ultimaRenta = 0.0;
+  bool _cargandoDatos = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarDatos();
+  }
+
+  Future<void> _cargarDatos() async {
+    try {
+      // Cargar último IGV calculado
+      final ultimoCalculoIGV = await HistorialIGVService.obtenerUltimoCalculo();
+      final ultimoImpuestoIGV = ultimoCalculoIGV?.igvPorPagar ?? 0.0;
+
+      // Cargar última Renta calculada
+      final ultimoImpuestoRenta =
+          await HistorialRentaService.obtenerUltimoImpuesto();
+
+      if (mounted) {
+        setState(() {
+          _ultimoIGV = ultimoImpuestoIGV;
+          _ultimaRenta = ultimoImpuestoRenta;
+          _cargandoDatos = false;
+        });
+
+        // Debug temporal
+        print('HomeScreen - IGV: $ultimoImpuestoIGV');
+        print('HomeScreen - Renta: $ultimoImpuestoRenta');
+        print(
+          'HomeScreen - IGV formateado: ${_formatearMoneda(ultimoImpuestoIGV)}',
+        );
+        print(
+          'HomeScreen - Renta formateado: ${_formatearMoneda(ultimoImpuestoRenta)}',
+        );
+      }
+    } catch (e) {
+      print('Error al cargar datos del resumen: $e');
+      if (mounted) {
+        setState(() {
+          _cargandoDatos = false;
+        });
+      }
+    }
+  }
+
+  String _formatearMoneda(double monto) {
+    // Verificar si el número es válido
+    if (monto.isNaN || monto.isInfinite) {
+      return 'S/ 0.00';
+    }
+
+    if (monto == 0.0) {
+      return 'S/ 0.00';
+    }
+
+    // Manejar números negativos
+    if (monto < 0) {
+      return '-S/ ${(-monto).toStringAsFixed(2)}';
+    }
+
+    // Formato más simple y legible
+    if (monto >= 1000000) {
+      double millones = monto / 1000000;
+      return 'S/ ${millones.toStringAsFixed(millones == millones.toInt() ? 0 : 1)}M';
+    } else if (monto >= 1000) {
+      double miles = monto / 1000;
+      return 'S/ ${miles.toStringAsFixed(miles == miles.toInt() ? 0 : 1)}K';
+    } else {
+      // Para números pequeños, usar formato estándar con separador de miles si es necesario
+      return 'S/ ${monto.toStringAsFixed(2)}';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: const CompulsaAppBar(
-        title: 'Compulsa',
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildWelcomeSection(),
-            const SizedBox(height: 32),
-            _buildStatsSection(context),
-            const SizedBox(height: 32),
-            _buildQuickAccessSection(context),
-            const SizedBox(height: 32),
-            _buildMainActionsSection(context),
-            const SizedBox(height: 20),
-          ],
+      appBar: const CompulsaAppBar(title: 'Compulsa'),
+      body: RefreshIndicator(
+        onRefresh: _cargarDatos,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildWelcomeSection(),
+              const SizedBox(height: 32),
+              _buildStatsSection(context),
+              const SizedBox(height: 32),
+              _buildQuickAccessSection(context),
+              const SizedBox(height: 32),
+              _buildMainActionsSection(context),
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -88,10 +172,7 @@ class HomeScreen extends StatelessWidget {
                     SizedBox(height: 4),
                     Text(
                       'Tu asistente tributario inteligente',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.white70),
                     ),
                   ],
                 ),
@@ -113,33 +194,57 @@ class HomeScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.calculate_outlined, color: Colors.white, size: 20),
+                    Icon(
+                      Icons.calculate_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     SizedBox(width: 12),
                     Text(
                       'Cálculo automático de IGV \ny Renta',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
                 SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.account_balance_wallet_outlined, color: Colors.white, size: 20),
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     SizedBox(width: 12),
                     Text(
                       'Gestión de saldos a favor',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
                 SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.assessment_outlined, color: Colors.white, size: 20),
+                    Icon(
+                      Icons.assessment_outlined,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     SizedBox(width: 12),
                     Text(
                       'Reportes y análisis tributario',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -183,8 +288,9 @@ class HomeScreen extends StatelessWidget {
                 child: _buildStatCard(
                   icon: Icons.trending_up,
                   title: 'IGV Calculado',
-                  value: 'S/ 0.00',
+                  value: _cargandoDatos ? '...' : _formatearMoneda(_ultimoIGV),
                   color: AppColors.igvColor,
+                  isLoading: _cargandoDatos,
                 ),
               ),
               const SizedBox(width: 12),
@@ -192,8 +298,11 @@ class HomeScreen extends StatelessWidget {
                 child: _buildStatCard(
                   icon: Icons.account_balance,
                   title: 'Renta Calculada',
-                  value: 'S/ 0.00',
+                  value: _cargandoDatos
+                      ? '...'
+                      : _formatearMoneda(_ultimaRenta),
                   color: AppColors.rentaColor,
+                  isLoading: _cargandoDatos,
                 ),
               ),
             ],
@@ -208,16 +317,15 @@ class HomeScreen extends StatelessWidget {
     required String title,
     required String value,
     required Color color,
+    bool isLoading = false,
   }) {
     return Container(
+      height: 120, // Altura fija para consistencia
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,16 +339,33 @@ class HomeScreen extends StatelessWidget {
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w500,
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
+          const Spacer(), // Empuja el valor hacia abajo
+          isLoading
+              ? Center(
+                  child: SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: color,
+                    ),
+                  ),
+                )
+              : FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 18, // Volvemos a un tamaño más grande
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                    maxLines: 1,
+                  ),
+                ),
         ],
       ),
     );
@@ -274,7 +399,11 @@ class HomeScreen extends StatelessWidget {
                 title: 'Calcular IGV',
                 subtitle: 'Impuesto General a las Ventas',
                 color: AppColors.igvColor,
-                onTap: () => AppRoutes.navigateTo(context, AppRoutes.igv),
+                onTap: () async {
+                  await AppRoutes.navigateTo(context, AppRoutes.igv);
+                  // Recargar datos cuando regrese de la pantalla de IGV
+                  _cargarDatos();
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -285,7 +414,11 @@ class HomeScreen extends StatelessWidget {
                 title: 'Calcular Renta',
                 subtitle: 'Impuesto a la Renta',
                 color: AppColors.rentaColor,
-                onTap: () => AppRoutes.navigateTo(context, AppRoutes.renta),
+                onTap: () async {
+                  await AppRoutes.navigateTo(context, AppRoutes.renta);
+                  // Recargar datos cuando regrese de la pantalla de Renta
+                  _cargarDatos();
+                },
               ),
             ),
           ],
@@ -300,7 +433,11 @@ class HomeScreen extends StatelessWidget {
       children: [
         Row(
           children: [
-            const Icon(Icons.dashboard_outlined, color: AppColors.primary, size: 24),
+            const Icon(
+              Icons.dashboard_outlined,
+              color: AppColors.primary,
+              size: 24,
+            ),
             const SizedBox(width: 8),
             const Text(
               'Funciones Principales',
@@ -319,7 +456,11 @@ class HomeScreen extends StatelessWidget {
           title: 'Declaraciones',
           subtitle: 'Gestionar declaraciones mensuales y anuales',
           color: AppColors.igvColor,
-          onTap: () => AppRoutes.navigateTo(context, AppRoutes.declaraciones),
+          onTap: () async {
+            await AppRoutes.navigateTo(context, AppRoutes.declaraciones);
+            // Recargar datos por si se crearon nuevas declaraciones
+            _cargarDatos();
+          },
         ),
         const SizedBox(height: 16),
         _buildMainActionCard(
@@ -328,7 +469,11 @@ class HomeScreen extends StatelessWidget {
           title: 'Reportes',
           subtitle: 'Análisis y reportes tributarios detallados',
           color: AppColors.rentaColor,
-          onTap: () => AppRoutes.navigateTo(context, AppRoutes.reportes),
+          onTap: () async {
+            await AppRoutes.navigateTo(context, AppRoutes.reportes);
+            // Recargar datos por si se accedieron a reportes
+            _cargarDatos();
+          },
         ),
       ],
     );
@@ -369,11 +514,7 @@ class HomeScreen extends StatelessWidget {
                     color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 28,
-                  ),
+                  child: Icon(icon, color: color, size: 28),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -412,7 +553,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-
   Widget _buildQuickActionCard(
     BuildContext context, {
     required IconData icon,
@@ -450,7 +590,11 @@ class HomeScreen extends StatelessWidget {
                       end: Alignment.bottomRight,
                       colors: [
                         color,
-                        color.withValues(red: color.red * 0.8, green: color.green * 0.8, blue: color.blue * 0.8),
+                        color.withValues(
+                          red: color.red * 0.8,
+                          green: color.green * 0.8,
+                          blue: color.blue * 0.8,
+                        ),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(12),

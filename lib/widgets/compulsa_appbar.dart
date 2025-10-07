@@ -17,11 +17,11 @@ class CompulsaAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     List<Widget> actions = [];
-    
+
     if (additionalActions != null) {
       actions.addAll(additionalActions!);
     }
-    
+
     if (showAvatar) {
       actions.add(const AppBarAvatar());
     }

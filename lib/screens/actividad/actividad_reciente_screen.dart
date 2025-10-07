@@ -7,7 +7,8 @@ class ActividadRecienteScreen extends StatefulWidget {
   const ActividadRecienteScreen({super.key});
 
   @override
-  State<ActividadRecienteScreen> createState() => _ActividadRecienteScreenState();
+  State<ActividadRecienteScreen> createState() =>
+      _ActividadRecienteScreenState();
 }
 
 class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
@@ -23,7 +24,9 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
   Future<void> _cargarActividades() async {
     setState(() => _cargando = true);
     try {
-      final actividades = await ActividadRecienteService.obtenerActividades(limite: 50);
+      final actividades = await ActividadRecienteService.obtenerActividades(
+        limite: 50,
+      );
       setState(() {
         _actividades = actividades;
         _cargando = false;
@@ -55,8 +58,8 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
       body: _cargando
           ? const Center(child: CircularProgressIndicator())
           : _actividades.isEmpty
-              ? _buildEmptyState()
-              : _buildActividadesList(),
+          ? _buildEmptyState()
+          : _buildActividadesList(),
     );
   }
 
@@ -65,11 +68,7 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.history,
-            size: 80,
-            color: Colors.grey[400],
-          ),
+          Icon(Icons.history, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
             'No hay actividad reciente',
@@ -83,10 +82,7 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
           Text(
             'Realiza algunos cálculos o configuraciones\npara ver tu actividad aquí',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
       ),
@@ -109,7 +105,7 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
 
   Widget _buildActividadCard(ActividadReciente actividad, int index) {
     final color = _hexToColor(actividad.color);
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -150,18 +146,14 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
                     const SizedBox(height: 4),
                     Text(
                       _getTipoTexto(actividad.tipo),
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      ActividadRecienteService.formatearFecha(actividad.fechaCreacion),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
+                      ActividadRecienteService.formatearFecha(
+                        actividad.fechaCreacion,
                       ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
                 ),
@@ -286,12 +278,17 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
     );
   }
 
-  Future<void> _eliminarActividad(ActividadReciente actividad, int index) async {
+  Future<void> _eliminarActividad(
+    ActividadReciente actividad,
+    int index,
+  ) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar Actividad'),
-        content: const Text('¿Estás seguro de que quieres eliminar esta actividad?'),
+        content: const Text(
+          '¿Estás seguro de que quieres eliminar esta actividad?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -312,15 +309,15 @@ class _ActividadRecienteScreenState extends State<ActividadRecienteScreen> {
           _actividades.removeAt(index);
         });
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Actividad eliminada')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Actividad eliminada')));
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error al eliminar: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
         }
       }
     }

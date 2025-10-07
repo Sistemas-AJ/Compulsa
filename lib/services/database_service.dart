@@ -29,14 +29,14 @@ class DatabaseService {
         await _database!.close();
         _database = null;
       }
-      
+
       String databasesPath = await getDatabasesPath();
       String path = join(databasesPath, 'Compulsa.db');
-      
+
       // Eliminar la base de datos existente
       await deleteDatabase(path);
       print('Base de datos eliminada y será recreada');
-      
+
       // Reinicializar
       _database = await _initDatabase();
     } catch (e) {
@@ -46,7 +46,7 @@ class DatabaseService {
 
   Future<Database> _initDatabase() async {
     // No inicializar sqflite_ffi aquí, ya se hace en main.dart
-    
+
     String databasesPath = await getDatabasesPath();
     String path = join(databasesPath, 'Compulsa.db');
 
@@ -165,12 +165,14 @@ class DatabaseService {
   Future<void> _inicializarDatosDefecto(Database db) async {
     try {
       // Verificar si ya hay regímenes
-      final List<Map<String, dynamic>> regimenes = await db.query('Regimenes_Tributarios');
+      final List<Map<String, dynamic>> regimenes = await db.query(
+        'Regimenes_Tributarios',
+      );
       print('Regímenes existentes: ${regimenes.length}');
-      
+
       if (regimenes.isEmpty) {
         print('Insertando regímenes predefinidos...');
-        
+
         // Insertar regímenes tributarios oficiales del Perú
         await db.insert('Regimenes_Tributarios', {
           'nombre': '(NRUS)',
@@ -178,31 +180,35 @@ class DatabaseService {
           'tasa_igv': 0.0, // NRUS no paga IGV
         });
         print('Insertado: NRUS');
-        
+
         await db.insert('Regimenes_Tributarios', {
           'nombre': '(RER)',
           'tasa_renta': 1.0, // 1.0% sobre ventas netas para RER
           'tasa_igv': 18.0, // RER paga IGV normal
         });
         print('Insertado: RER');
-        
+
         await db.insert('Regimenes_Tributarios', {
           'nombre': '(MYPE)',
           'tasa_renta': 1.0, // 1.0% base para MYPE (lógica especial en código)
           'tasa_igv': 18.0, // MYPE paga IGV normal
         });
         print('Insertado: MYPE');
-        
+
         await db.insert('Regimenes_Tributarios', {
           'nombre': '(General)',
           'tasa_renta': 1.5, // 1.5% para Régimen General
           'tasa_igv': 18.0, // General paga IGV normal
         });
         print('Insertado: General');
-        
+
         // Verificar inserción
-        final List<Map<String, dynamic>> nuevosRegimenes = await db.query('Regimenes_Tributarios');
-        print('Total regímenes después de inserción: ${nuevosRegimenes.length}');
+        final List<Map<String, dynamic>> nuevosRegimenes = await db.query(
+          'Regimenes_Tributarios',
+        );
+        print(
+          'Total regímenes después de inserción: ${nuevosRegimenes.length}',
+        );
       } else {
         print('Regímenes ya existen en la base de datos');
       }
@@ -211,9 +217,13 @@ class DatabaseService {
     }
   }
 
-  Future<void> _upgradeDatabase(Database db, int oldVersion, int newVersion) async {
+  Future<void> _upgradeDatabase(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     print('Actualizando base de datos de versión $oldVersion a $newVersion');
-    
+
     if (oldVersion < 2) {
       // Agregar tabla Actividades_Recientes en la versión 2
       await db.execute('''
@@ -228,7 +238,7 @@ class DatabaseService {
         )
       ''');
     }
-    
+
     if (oldVersion < 3) {
       // Reinicializar regímenes en la versión 3
       await db.delete('Regimenes_Tributarios');
@@ -236,16 +246,28 @@ class DatabaseService {
       // Migrar empresas existentes para usar nuevos IDs
       await _migrarEmpresasExistentes();
     }
-    
+
     if (oldVersion < 4) {
       // Agregar columna tasa_igv en la versión 4
       try {
-        await db.execute('ALTER TABLE Regimenes_Tributarios ADD COLUMN tasa_igv REAL NOT NULL DEFAULT 18.0');
+        await db.execute(
+          'ALTER TABLE Regimenes_Tributarios ADD COLUMN tasa_igv REAL NOT NULL DEFAULT 18.0',
+        );
         print('Columna tasa_igv agregada correctamente');
-        
+
         // Actualizar tasas de IGV para regímenes existentes
-        await db.update('Regimenes_Tributarios', {'tasa_igv': 0.0}, where: 'nombre LIKE ?', whereArgs: ['%NRUS%']);
-        await db.update('Regimenes_Tributarios', {'tasa_igv': 18.0}, where: 'nombre NOT LIKE ?', whereArgs: ['%NRUS%']);
+        await db.update(
+          'Regimenes_Tributarios',
+          {'tasa_igv': 0.0},
+          where: 'nombre LIKE ?',
+          whereArgs: ['%NRUS%'],
+        );
+        await db.update(
+          'Regimenes_Tributarios',
+          {'tasa_igv': 18.0},
+          where: 'nombre NOT LIKE ?',
+          whereArgs: ['%NRUS%'],
+        );
         print('Tasas de IGV actualizadas');
       } catch (e) {
         print('Error al agregar columna tasa_igv: $e');
@@ -255,7 +277,7 @@ class DatabaseService {
         await _migrarEmpresasExistentes();
       }
     }
-    
+
     if (oldVersion < 5) {
       // Agregar columna imagen_perfil en la versión 5
       try {
@@ -265,48 +287,51 @@ class DatabaseService {
         print('Error al agregar columna imagen_perfil: $e');
       }
     }
-    
+
     if (oldVersion < 6) {
       // Corregir tasas de renta incorrectas en la versión 6
       try {
         print('Corrigiendo tasas de renta incorrectas...');
-        
+
         // Corregir tasa de MYPE de 10.0% a 1.0%
-        await db.update('Regimenes_Tributarios', 
-          {'tasa_renta': 1.0}, 
-          where: 'nombre LIKE ?', 
-          whereArgs: ['%MYPE%']
+        await db.update(
+          'Regimenes_Tributarios',
+          {'tasa_renta': 1.0},
+          where: 'nombre LIKE ?',
+          whereArgs: ['%MYPE%'],
         );
-        
+
         // Corregir tasa de General de 29.5% a 1.5%
-        await db.update('Regimenes_Tributarios', 
-          {'tasa_renta': 1.5}, 
-          where: 'nombre LIKE ?', 
-          whereArgs: ['%General%']
+        await db.update(
+          'Regimenes_Tributarios',
+          {'tasa_renta': 1.5},
+          where: 'nombre LIKE ?',
+          whereArgs: ['%General%'],
         );
-        
+
         // Verificar que RER tenga 1.0%
-        await db.update('Regimenes_Tributarios', 
-          {'tasa_renta': 1.0}, 
-          where: 'nombre LIKE ?', 
-          whereArgs: ['%RER%']
+        await db.update(
+          'Regimenes_Tributarios',
+          {'tasa_renta': 1.0},
+          where: 'nombre LIKE ?',
+          whereArgs: ['%RER%'],
         );
-        
+
         // Verificar que NRUS tenga 0.0%
-        await db.update('Regimenes_Tributarios', 
-          {'tasa_renta': 0.0}, 
-          where: 'nombre LIKE ?', 
-          whereArgs: ['%NRUS%']
+        await db.update(
+          'Regimenes_Tributarios',
+          {'tasa_renta': 0.0},
+          where: 'nombre LIKE ?',
+          whereArgs: ['%NRUS%'],
         );
-        
+
         print('Tasas de renta corregidas exitosamente');
-        
+
         // Mostrar tasas actualizadas para verificación
         final regimenes = await db.query('Regimenes_Tributarios');
         for (var regimen in regimenes) {
           print('Régimen ${regimen['nombre']}: ${regimen['tasa_renta']}%');
         }
-        
       } catch (e) {
         print('Error al corregir tasas de renta: $e');
       }
@@ -318,16 +343,18 @@ class DatabaseService {
     try {
       final db = await database;
       print('Base de datos inicializada correctamente');
-      
-      final List<Map<String, dynamic>> maps = await db.query('Regimenes_Tributarios');
+
+      final List<Map<String, dynamic>> maps = await db.query(
+        'Regimenes_Tributarios',
+      );
       print('Consultando regímenes: encontrados ${maps.length}');
-      
+
       if (maps.isNotEmpty) {
         for (var map in maps) {
           print('Régimen: ${map['nombre']} - Tasa: ${map['tasa_renta']}%');
         }
       }
-      
+
       return List.generate(maps.length, (i) {
         return RegimenTributario(
           id: maps[i]['id'],
@@ -366,7 +393,7 @@ class DatabaseService {
       // Eliminar todos los regímenes existentes
       await db.delete('Regimenes_Tributarios');
       print('Regímenes eliminados');
-      
+
       // Insertar regímenes nuevamente
       await _inicializarDatosDefecto(db);
       print('Regímenes reinicializados');
@@ -384,7 +411,7 @@ class DatabaseService {
   Future<List<Empresa>> obtenerEmpresas() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Empresas');
-    
+
     return List.generate(maps.length, (i) {
       return Empresa.fromJson(maps[i]);
     });
@@ -416,11 +443,7 @@ class DatabaseService {
 
   Future<int> eliminarEmpresa(int id) async {
     final db = await database;
-    return await db.delete(
-      'Empresas',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    return await db.delete('Empresas', where: 'id = ?', whereArgs: [id]);
   }
 
   // ===== MÉTODOS PARA LIQUIDACIONES =====
@@ -431,14 +454,18 @@ class DatabaseService {
 
   Future<List<LiquidacionMensual>> obtenerLiquidaciones() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('Liquidaciones_Mensuales');
-    
+    final List<Map<String, dynamic>> maps = await db.query(
+      'Liquidaciones_Mensuales',
+    );
+
     return List.generate(maps.length, (i) {
       return LiquidacionMensual.fromJson(maps[i]);
     });
   }
 
-  Future<List<LiquidacionMensual>> obtenerLiquidacionesPorEmpresa(int empresaId) async {
+  Future<List<LiquidacionMensual>> obtenerLiquidacionesPorEmpresa(
+    int empresaId,
+  ) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'Liquidaciones_Mensuales',
@@ -446,7 +473,7 @@ class DatabaseService {
       whereArgs: [empresaId],
       orderBy: 'periodo DESC',
     );
-    
+
     return List.generate(maps.length, (i) {
       return LiquidacionMensual.fromJson(maps[i]);
     });
@@ -461,7 +488,7 @@ class DatabaseService {
   Future<List<SaldoFiscal>> obtenerSaldosFiscales() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Saldos_Fiscales');
-    
+
     return List.generate(maps.length, (i) {
       return SaldoFiscal.fromJson(maps[i]);
     });
@@ -476,7 +503,7 @@ class DatabaseService {
   Future<List<PagoRealizado>> obtenerPagos() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('Pagos_Realizados');
-    
+
     return List.generate(maps.length, (i) {
       return PagoRealizado.fromJson(maps[i]);
     });
@@ -490,14 +517,16 @@ class DatabaseService {
     return await db.insert('Actividades_Recientes', data);
   }
 
-  Future<List<ActividadReciente>> obtenerActividadesRecientes({int limite = 10}) async {
+  Future<List<ActividadReciente>> obtenerActividadesRecientes({
+    int limite = 10,
+  }) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'Actividades_Recientes',
       orderBy: 'fecha_creacion DESC',
       limit: limite,
     );
-    
+
     return List.generate(maps.length, (i) {
       final map = Map<String, dynamic>.from(maps[i]);
       map['datos'] = jsonDecode(map['datos']); // Convertir JSON string a Map
@@ -507,11 +536,7 @@ class DatabaseService {
 
   Future<void> eliminarActividadReciente(int id) async {
     final db = await database;
-    await db.delete(
-      'Actividades_Recientes',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('Actividades_Recientes', where: 'id = ?', whereArgs: [id]);
   }
 
   Future<void> limpiarActividadesAntiguas({int diasMaximos = 30}) async {
@@ -537,10 +562,10 @@ class DatabaseService {
         await _database!.close();
         _database = null;
       }
-      
+
       String databasesPath = await getDatabasesPath();
       String path = join(databasesPath, 'Compulsa.db');
-      
+
       try {
         await deleteDatabase(path);
         print('Base de datos eliminada correctamente: $path');
@@ -565,23 +590,25 @@ class DatabaseService {
   Future<void> _migrarEmpresasExistentes() async {
     print('Iniciando migración de empresas existentes');
     final db = await database;
-    
+
     try {
       // Obtener todos los regímenes válidos
       final regimenesResult = await db.query('Regimenes_Tributarios');
-      final List<int> regimenesValidos = regimenesResult.map((r) => r['id'] as int).toList();
+      final List<int> regimenesValidos = regimenesResult
+          .map((r) => r['id'] as int)
+          .toList();
       print('Regímenes válidos disponibles: $regimenesValidos');
-      
+
       // Obtener empresas existentes
       final empresasResult = await db.query('empresas');
       print('Empresas existentes encontradas: ${empresasResult.length}');
-      
+
       for (final empresa in empresasResult) {
         final empresaId = empresa['id'];
         final regimenId = empresa['regimen_tributario_id'];
-        
+
         print('Procesando empresa ID: $empresaId, regimen actual: $regimenId');
-        
+
         // Si el régimen no existe o es null, asignar el primero disponible (NRUS)
         if (regimenId == null || !regimenesValidos.contains(regimenId)) {
           final nuevoRegimenId = regimenesValidos.first; // NRUS por defecto
@@ -591,7 +618,9 @@ class DatabaseService {
             where: 'id = ?',
             whereArgs: [empresaId],
           );
-          print('Empresa $empresaId migrada de régimen $regimenId a $nuevoRegimenId');
+          print(
+            'Empresa $empresaId migrada de régimen $regimenId a $nuevoRegimenId',
+          );
         } else {
           print('Empresa $empresaId ya tiene régimen válido: $regimenId');
         }

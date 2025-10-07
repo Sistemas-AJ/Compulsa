@@ -1,15 +1,6 @@
-enum TipoDeclaracion {
-  igv,
-  renta,
-}
+enum TipoDeclaracion { igv, renta }
 
-enum EstadoDeclaracion {
-  borrador,
-  pendiente,
-  presentada,
-  observada,
-  cancelada,
-}
+enum EstadoDeclaracion { borrador, pendiente, presentada, observada, cancelada }
 
 class Declaracion {
   final String id;
@@ -54,7 +45,7 @@ class Declaracion {
         orElse: () => EstadoDeclaracion.borrador,
       ),
       fechaCreacion: DateTime.parse(map['fechaCreacion']),
-      fechaPresentacion: map['fechaPresentacion'] != null 
+      fechaPresentacion: map['fechaPresentacion'] != null
           ? DateTime.parse(map['fechaPresentacion'])
           : null,
       numeroFormulario: map['numeroFormulario'],
@@ -135,8 +126,19 @@ class Declaracion {
 
   String get periodoFormatted {
     final meses = [
-      '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      '',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     return '${meses[periodo.month]} ${periodo.year}';
   }

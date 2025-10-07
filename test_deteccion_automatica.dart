@@ -32,20 +32,22 @@ void main() {
 
   for (final caso in casos) {
     print('📋 ${caso['descripcion']}');
-    
+
     final ingresos = caso['ingresos'] as double;
     final gastos = caso['gastos'] as double;
     final coeficiente = caso['coeficiente'] as double?;
     final deberiaActivarse = caso['deberiaActivarse'] as bool;
-    
+
     // Verificar si supera el límite (esto es lo que hace la lógica de detección)
     final superaLimite = ingresos > RegimenTributario.limiteMyeBasico;
-    
+
     print('  → Ingresos: S/ ${ingresos.toStringAsFixed(0)}');
-    print('  → Límite MYPE: S/ ${RegimenTributario.limiteMyeBasico.toStringAsFixed(0)}');
+    print(
+      '  → Límite MYPE: S/ ${RegimenTributario.limiteMyeBasico.toStringAsFixed(0)}',
+    );
     print('  → Supera límite: ${superaLimite ? 'SÍ' : 'NO'}');
     print('  → Debería activar opciones: ${deberiaActivarse ? 'SÍ' : 'NO'}');
-    
+
     if (superaLimite) {
       // Calcular las opciones que se mostrarían
       final opciones = RegimenTributario.calcularTasaMyPE(
@@ -53,22 +55,28 @@ void main() {
         gastosDeducibles: gastos,
         coeficientePersonalizado: coeficiente,
       );
-      
+
       print('  → Tipo de opción: ${opciones['tipo']}');
-      print('  → Tasa aplicable: ${(opciones['tasa'] * 100).toStringAsFixed(2)}%');
+      print(
+        '  → Tasa aplicable: ${(opciones['tasa'] * 100).toStringAsFixed(2)}%',
+      );
       print('  → Descripción: ${opciones['descripcion']}');
-      
+
       // Verificar la tasa calculada con la función principal
       final tasaCalculada = calcularTasaRenta(
         RegimenTributarioEnum.mype,
         monto: ingresos,
         coeficiente: coeficiente,
       );
-      
-      print('  → Tasa con calcularTasaRenta: ${(tasaCalculada * 100).toStringAsFixed(2)}%');
+
+      print(
+        '  → Tasa con calcularTasaRenta: ${(tasaCalculada * 100).toStringAsFixed(2)}%',
+      );
     }
-    
-    print('  ${superaLimite == deberiaActivarse ? '✅' : '❌'} Detección correcta\n');
+
+    print(
+      '  ${superaLimite == deberiaActivarse ? '✅' : '❌'} Detección correcta\n',
+    );
   }
 
   print('🎯 === RESUMEN ===');

@@ -68,11 +68,13 @@ class _AppBarAvatarState extends State<AppBarAvatar> {
         child: CircleAvatar(
           radius: 20,
           backgroundColor: Colors.white.withOpacity(0.2),
-          backgroundImage: _empresaActual?.imagenPerfil != null &&
-                          File(_empresaActual!.imagenPerfil!).existsSync()
+          backgroundImage:
+              _empresaActual?.imagenPerfil != null &&
+                  File(_empresaActual!.imagenPerfil!).existsSync()
               ? FileImage(File(_empresaActual!.imagenPerfil!))
               : null,
-          child: _empresaActual?.imagenPerfil == null ||
+          child:
+              _empresaActual?.imagenPerfil == null ||
                   !File(_empresaActual!.imagenPerfil!).existsSync()
               ? Icon(
                   _empresaActual == null ? Icons.add : Icons.business,
