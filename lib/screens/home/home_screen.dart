@@ -380,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.flash_on, color: AppColors.primary, size: 24),
             const SizedBox(width: 8),
             const Text(
-              'Acceso Rápido',
+              'Funciones Principales',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -440,7 +440,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(width: 8),
             const Text(
-              'Funciones Principales',
+              'Funciones Adicionales',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
